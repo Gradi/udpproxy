@@ -119,8 +119,7 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
             lock this (fun () ->
                 checkDisposed ()
                 socket.Value.Connect endpoint
-                socket.Value.Send buffer |> ignore
-                socket.Value.Disconnect true)
+                socket.Value.Send buffer |> ignore)
             return ()
         }
 

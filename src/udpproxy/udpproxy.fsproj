@@ -16,10 +16,12 @@
     <Compile Include="Services\CryptoRnd.fs" />
     <Compile Include="Services\Dns.fs" />
     <Compile Include="Services\SocketCollection.fs" />
+    <Compile Include="Services\ConnectionTracking.fs" />
 
 
     <Compile Include="Pipelines\Pipeline.fs" />
     <Compile Include="Pipelines\RndPadPipeline.fs" />
+    <Compile Include="Pipelines\MailmanPipeline.fs" />
 
     <Compile Include="PipelinesBuilders\PipelineBuilder.fs" />
 

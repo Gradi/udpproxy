@@ -21,7 +21,7 @@ type ISocketCollection =
 
 
 type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan, logger: ILogger,
-                       cacheFactory: ICacheFactory, packetHandler: IPacketHandler) =
+                       cacheFactory: ICacheFactory, packetHandler: Lazy<IPacketHandler>) =
 
     let logger = logger.ForContext<SocketCollection> ()
     let upstreamSocketsCache = lazy (cacheFactory.Create ())
@@ -29,7 +29,7 @@ type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan,
     let clientSockets =
         lazy (
             inputEndpoints
-            |> List.map (fun en -> new UdpSocket (Choice1Of2 en, 1024 * 1024, packetHandler.HandleClientPacket, logger))
+            |> List.map (fun en -> new UdpSocket (Choice1Of2 en, 1024 * 1024, packetHandler.Value.HandleClientPacket, logger))
             |> Array.ofList)
 
 
@@ -43,7 +43,7 @@ type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan,
                     match upstreamSocketsCache.Value.TryGetTouch endpoint : UdpSocket option with
                     | Some socket -> socket
                     | None ->
-                        let socket = new UdpSocket (Choice2Of2 endpoint.AddressFamily, 1024 * 1024, packetHandler.HandleUpstreamPacket, logger)
+                        let socket = new UdpSocket (Choice2Of2 endpoint.AddressFamily, 1024 * 1024, packetHandler.Value.HandleUpstreamPacket, logger)
                         upstreamSocketsCache.Value.PutWithTtl endpoint socket connectionTtl
                         socket)
 

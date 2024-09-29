@@ -54,6 +54,13 @@ type PipelineBuilderJsonConverter () =
         (fun (c: IComponentContext) -> RndPadPipeline (minBytes, maxBytes, c.Resolve<ILogger> (), c.Resolve<ICryptoRnd> ()))
 
 
+    let readMailman (jobj: JObject) : RegFunc =
+        let outputEndpoints = getProp<Endpoint list> "output" jobj
+
+        (fun (c: IComponentContext) -> MailmanPipeline (outputEndpoints, c.Resolve<Lazy<IDns>> (), c.Resolve<Lazy<ISocketCollection>>() ,
+                                                        c.Resolve<Lazy<IConnectionTracking>>(), c.Resolve<ILogger> ()))
+
+
     override this.CanConvert objectType = objectType = typeof<IPipelineBuilder>
 
     override this.WriteJson (_, _, _) =
@@ -66,6 +73,7 @@ type PipelineBuilderJsonConverter () =
         let pipeline : IPipelineBuilder =
             match metadata.Name.ToLower () with
             | "rndpad" -> readRndPad jObj |> finish metadata
+            | "mailman" -> readMailman jObj |> finish metadata
             | t -> failwithf "Unknown pipeline type \"%s\"" t
 
         box pipeline

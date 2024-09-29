@@ -5,11 +5,11 @@ open System.Threading
 open Argu
 open Autofac
 open Configuration
-open Microsoft.VisualBasic
 open Serilog
 open System
 open System.Globalization
 open System.IO
+open UdpProxy.Configuration
 open UdpProxy.Services
 
 
@@ -38,9 +38,17 @@ let configureSocketCollection (container: ContainerBuilder) (config: ConntrackCo
             inputPorts
             |> List.map dns.Resolve
             |> List.collect id
-        new SocketCollection (resolvedEnps, config.Ttl, c.Resolve<ILogger> (), c.Resolve<ICacheFactory>(), c.Resolve<IPacketHandler> ()))
+        new SocketCollection (resolvedEnps, config.Ttl, c.Resolve<ILogger> (), c.Resolve<ICacheFactory>(), c.Resolve<Lazy<IPacketHandler>> ()))
         .SingleInstance()
         .As<ISocketCollection>()
+        |> ignore
+
+
+let configureConnectionTracking (container: ContainerBuilder) (config: ConntrackConfig) =
+    container.Register<ConnectionTracking>(fun (c: IComponentContext) ->
+        ConnectionTracking (config.Ttl, c.Resolve<ICacheFactory> ()))
+        .SingleInstance()
+        .As<IConnectionTracking>()
         |> ignore
 
 
@@ -78,6 +86,7 @@ let runProxy (args: ParseResults<RunArgs>) =
     configureCryptoRnd builder
     configureDns builder configuration.Dns
     configureSocketCollection builder configuration.Conntrack configuration.InputPorts
+    configureConnectionTracking builder configuration.Conntrack
     configurePipeline builder configuration.PipelinesBuilders
     configureLogger builder configuration.Log
     builder.RegisterType<App>().SingleInstance().AsImplementedInterfaces() |> ignore

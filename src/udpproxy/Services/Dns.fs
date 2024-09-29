@@ -13,6 +13,12 @@ type Endpoint =
     | IpPort of IPEndPoint
     | Host of string * int
 
+        override this.ToString () =
+            match this with
+            | PortOnly port -> port.ToString ()
+            | IpPort ip -> ip.ToString ()
+            | Host (host, port) -> sprintf "%s:%d" host port
+
 
 type IDns =
 
