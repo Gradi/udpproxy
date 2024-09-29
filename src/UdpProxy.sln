@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "udpproxy", "udpproxy\udpproxy.fsproj", "{D04DDA76-2A42-40C7-BA9C-755A894F4D31}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{F79BF0D0-1C33-4FC8-BE54-E470AD3C358A}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TestUdpProxy", "Tests\TestUdpProxy\TestUdpProxy.fsproj", "{68762E0D-D802-4ED4-B51A-018311406083}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|x64 = Release|x64
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D04DDA76-2A42-40C7-BA9C-755A894F4D31}.Release|x64.ActiveCfg = Release|x64
+		{D04DDA76-2A42-40C7-BA9C-755A894F4D31}.Release|x64.Build.0 = Release|x64
+		{D04DDA76-2A42-40C7-BA9C-755A894F4D31}.Debug|x64.ActiveCfg = Debug|x64
+		{D04DDA76-2A42-40C7-BA9C-755A894F4D31}.Debug|x64.Build.0 = Debug|x64
+		{68762E0D-D802-4ED4-B51A-018311406083}.Release|x64.ActiveCfg = Release|x64
+		{68762E0D-D802-4ED4-B51A-018311406083}.Release|x64.Build.0 = Release|x64
+		{68762E0D-D802-4ED4-B51A-018311406083}.Debug|x64.ActiveCfg = Debug|x64
+		{68762E0D-D802-4ED4-B51A-018311406083}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{68762E0D-D802-4ED4-B51A-018311406083} = {F79BF0D0-1C33-4FC8-BE54-E470AD3C358A}
+	EndGlobalSection
+EndGlobal

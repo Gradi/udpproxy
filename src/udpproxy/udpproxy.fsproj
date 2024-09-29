@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Exceptions.fs" />
+    <Compile Include="JObject.fs" />
+    <Compile Include="Reflect.fs" />
+    <Compile Include="RWLock.fs" />
+
+    <Compile Include="UdpSocket.fs" />
+
+    <Compile Include="Services\Cache.fs" />
+    <Compile Include="Services\CryptoRnd.fs" />
+    <Compile Include="Services\Dns.fs" />
+    <Compile Include="Services\SocketCollection.fs" />
+
+
+    <Compile Include="Pipelines\Pipeline.fs" />
+    <Compile Include="Pipelines\RndPadPipeline.fs" />
+
+    <Compile Include="PipelinesBuilders\PipelineBuilder.fs" />
+
+    <Compile Include="App.fs" />
+    <Compile Include="Configuration.fs" />
+    <Compile Include="NewtonsoftJson.fs" />
+    <Compile Include="CliArgs.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+</Project>
