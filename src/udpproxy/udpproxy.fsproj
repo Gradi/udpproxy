@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Bits.fs" />
     <Compile Include="Exceptions.fs" />
     <Compile Include="JObject.fs" />
     <Compile Include="Reflect.fs" />
@@ -23,6 +24,7 @@
     <Compile Include="Pipelines\RndPadPipeline.fs" />
     <Compile Include="Pipelines\MailmanPipeline.fs" />
     <Compile Include="Pipelines\PacketReturnPipeline.fs" />
+    <Compile Include="Pipelines\LZ4Pipeline.fs" />
 
     <Compile Include="PipelinesBuilders\PipelineBuilder.fs" />
 

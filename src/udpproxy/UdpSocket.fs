@@ -18,7 +18,7 @@ type UdpPacket =
 
         override this.ToString () =
             let crc32 = Crc32.HashToUInt32 this.Payload
-            sprintf "udp<%d bytes, crc32: 0x%x, from: %O-> to: %O>" this.Length crc32 this.SourceEndpoint this.LocalSocket.LocalEndpoint
+            sprintf "udp<%d bytes, crc32: 0x%x, from: %O -> to: %O>" this.Length crc32 this.SourceEndpoint this.LocalSocket.LocalEndpoint
 
 and private SocketStatus =
     | Created

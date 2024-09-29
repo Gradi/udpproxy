@@ -65,6 +65,12 @@ type PipelineBuilderJsonConverter () =
         (fun (c: IComponentContext) -> PacketReturnPipeline (c.Resolve<Lazy<IConnectionTracking>> (), c.Resolve<ILogger> ()))
 
 
+    let readLZ4 (jobj: JObject) : RegFunc =
+        let level = tryGetProp<int> "level" jobj |> Option.defaultValue 3
+
+        (fun (c: IComponentContext) -> LZ4Pipeline (level, c.Resolve<ILogger> ()))
+
+
     override this.CanConvert objectType = objectType = typeof<IPipelineBuilder>
 
     override this.WriteJson (_, _, _) =
@@ -79,6 +85,7 @@ type PipelineBuilderJsonConverter () =
             | "rndpad" -> readRndPad jObj |> finish metadata
             | "mailman" -> readMailman jObj |> finish metadata
             | "packetreturn" -> readPacketReturn jObj |> finish metadata
+            | "lz4" -> readLZ4 jObj |> finish metadata
             | t -> failwithf "Unknown pipeline type \"%s\"" t
 
         box pipeline
