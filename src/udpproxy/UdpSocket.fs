@@ -1,5 +1,6 @@
 namespace UdpProxy
 
+open System.IO.Hashing
 open Serilog
 open System
 open System.Net
@@ -16,7 +17,8 @@ type UdpPacket =
         member this.Length = Array.length this.Payload
 
         override this.ToString () =
-            sprintf "udp<%d bytes, %O->%O>" this.Length this.SourceEndpoint this.LocalSocket.LocalEndpoint
+            let crc32 = Crc32.HashToUInt32 this.Payload
+            sprintf "udp<%d bytes, crc32: 0x%x, from: %O-> to: %O>" this.Length crc32 this.SourceEndpoint this.LocalSocket.LocalEndpoint
 
 and private SocketStatus =
     | Created
