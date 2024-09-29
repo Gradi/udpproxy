@@ -31,14 +31,22 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     let logger = logger.ForContext<UdpSocket>()
     let cancelToken = new CancellationTokenSource ()
 
-    let socket = lazy (
+    let anyEndpoint = lazy (
         let addressFamily =
             match localEndpoint with
             | Choice1Of2 ip -> ip.AddressFamily
             | Choice2Of2 family -> family
 
-        let socket = new Socket (addressFamily, SocketType.Dgram, ProtocolType.Udp)
         match addressFamily with
+        | AddressFamily.InterNetwork -> IPEndPoint (IPAddress.Any, 0)
+        | AddressFamily.InterNetworkV6 -> IPEndPoint (IPAddress.IPv6Any, 0)
+        | v -> failwithf "Address family \"%O\" is not supported. Only IPv4 or IPv6." v)
+
+
+    let socket = lazy (
+        let socket = new Socket (anyEndpoint.Value.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
+
+        match anyEndpoint.Value.AddressFamily with
         | AddressFamily.InterNetwork ->
             socket.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.PacketInformation, true)
         | AddressFamily.InterNetworkV6 ->
@@ -48,12 +56,10 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
         socket.ReceiveBufferSize <- bufferSize
 
         match localEndpoint with
-        | Choice1Of2 ip -> socket.Bind ip
+        | Choice1Of2 ip ->
+            socket.Bind ip
         | Choice2Of2 _ ->
-            match addressFamily with
-            | AddressFamily.InterNetwork -> socket.Bind (IPEndPoint (IPAddress.Any, 0))
-            | AddressFamily.InterNetworkV6 -> socket.Bind (IPEndPoint (IPAddress.IPv6Any, 0))
-            | _ -> ()
+            socket.Bind anyEndpoint.Value
 
         logger.Debug ("UdpSocket<{$LocalEndpoint}>: Socket created.", socket.LocalEndPoint)
         socket)
@@ -92,15 +98,10 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                     async {
                         try
                             let buffer : byte array = Array.zeroCreate bufferSize
-                            let remoteEndpoint =
-                                match socket.Value.AddressFamily with
-                                | AddressFamily.InterNetwork -> IPEndPoint(IPAddress.Any, 0)
-                                | AddressFamily.InterNetworkV6 -> IPEndPoint (IPAddress.IPv6Any, 0)
-                                | value -> failwithf "Unsupported Udp socket address family: %O" value
 
                             while not cancelToken.IsCancellationRequested do
                                 let! message =
-                                    socket.Value.ReceiveMessageFromAsync(ArraySegment<byte> buffer, SocketFlags.None, remoteEndpoint, cancelToken.Token)
+                                    socket.Value.ReceiveMessageFromAsync(ArraySegment<byte> buffer, SocketFlags.None, anyEndpoint.Value, cancelToken.Token)
                                      .AsTask()
                                     |> Async.AwaitTask
 

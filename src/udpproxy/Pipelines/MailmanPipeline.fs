@@ -25,13 +25,13 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
                 match outputAddresses.Value with
                 | [|  |] ->
                     if logger.IsEnabled LogEventLevel.Debug then
-                        logger.Debug "Mailman: Not sending out udp ({$Udp}). Output endpoints are not specified."
+                        logger.Debug "Mailman: Not sending out {$Udp}. Output endpoints are not specified."
                 | _ ->
 
                     let endpoint, address = Array.randomChoice outputAddresses.Value
 
                     if logger.IsEnabled LogEventLevel.Debug then
-                        logger.Debug ("Mailman: Sending out udp({$Udp}) to {$Address}({$ResolvedAddress}).", udpPacket,
+                        logger.Debug ("Mailman: Sending out {$Udp} to {$Address}(resolved: {$ResolvedAddress}).", udpPacket,
                                       endpoint, address)
 
                     let outputSocket = sockets.Value.GetOutputSocketForEndpoint address

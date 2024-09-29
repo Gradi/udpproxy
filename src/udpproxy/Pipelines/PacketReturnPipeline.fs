@@ -18,11 +18,11 @@ type PacketReturnPipeline (conntrack: Lazy<IConnectionTracking>, logger: ILogger
                 match conntrack.Value.TryGetClient udpPacket.LocalSocket with
                 | None ->
                     if logger.IsEnabled LogEventLevel.Debug then
-                        logger.Debug ("PacketReturn: Got orphaned packet ({$Udp}).", udpPacket)
+                        logger.Debug ("PacketReturn: Got orphaned packet {$Udp}. Dropping.", udpPacket)
 
                 | Some (client, socket) ->
                     if logger.IsEnabled LogEventLevel.Debug then
-                        logger.Debug ("PacketReturn: Sending packet ({$Udp}) back to {$Client} through {$LocalEndpoint}",
+                        logger.Debug ("PacketReturn: Sending packet {$Udp} back to {$Client} through {$LocalEndpoint}",
                                       udpPacket, client, socket.LocalEndpoint)
 
                     do! socket.Send udpPacket.Payload client

@@ -76,7 +76,7 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
         if not (List.isEmpty outdatedEntries) then
             let afterDeleteEntries =
                 writeLock locker (fun () ->
-                    List.iter (fun k -> entries.Remove (fst k) |> ignore) outdatedEntries
+                    List.iter (fun (key, _) -> entries.Remove key |> ignore) outdatedEntries
                     entries.Count)
 
             logger.Debug ("Cache: Deleted {OutdatedCount} entries, before {BeforeCount}, after {AfterCount} entries.",
@@ -99,7 +99,7 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
         timer.Start ()
         timer
 
-    let cast (value: obj): 'a =
+    member _.Cast<'a> (value: obj) =
         try
             value :?> 'a
         with
@@ -110,15 +110,15 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
 
     interface ICache with
 
-        member _.TryGet<'a> key =
+        member this.TryGet<'a> key =
             ArgumentNullException.ThrowIfNull (key, nameof(key))
 
             readLock locker (fun () ->
                 match entries.TryGetValue key with
                 | false, _ -> None
-                | true, value -> Some ((cast value.Value) : 'a))
+                | true, value -> Some (this.Cast<'a> value.Value))
 
-        member _.TryGetTouch<'a> key =
+        member this.TryGetTouch<'a> key =
             ArgumentNullException.ThrowIfNull (key, nameof(key))
 
             readLock locker (fun () ->
@@ -126,7 +126,7 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
                 | false, _ -> None
                 | true, value ->
                     value.Touch (now ())
-                    Some ((cast value.Value) : 'a))
+                    Some (this.Cast<'a> value.Value))
 
         member _.Put<'a> (key: obj) (value: 'a) =
             ArgumentNullException.ThrowIfNull (key, nameof(key))

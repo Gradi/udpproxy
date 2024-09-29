@@ -1,6 +1,5 @@
 namespace UdpProxy
 
-open Autofac
 open Serilog
 open Serilog.Events
 open System.Threading
@@ -14,11 +13,11 @@ type IApp =
     abstract Run: CancellationToken -> Async<unit>
 
 
-type App (pipelineStages: IPipeline seq, logger: ILogger, socketCollection: Lazy<ISocketCollection>) =
+type App (pipelineStages: Lazy<IPipeline seq>, logger: ILogger, socketCollection: Lazy<ISocketCollection>) =
 
     let logger = logger.ForContext<App> ()
 
-    let pipelineStages = lazy ( pipelineStages |> Array.ofSeq )
+    let pipelineStages = lazy ( pipelineStages.Value |> Array.ofSeq )
 
     let forwardEntrypoint =
         lazy (
@@ -27,7 +26,7 @@ type App (pipelineStages: IPipeline seq, logger: ILogger, socketCollection: Lazy
                     async {
                         try
                             if logger.IsEnabled LogEventLevel.Debug then
-                                logger.Debug ("App: UDP ({$Udp}) forward to stage \"{StageName}\"", udpPacket, stage.Name)
+                                logger.Debug ("App: FORWARD {$Udp} to \"{StageName}\"", udpPacket, stage.Name)
 
                             do! stage.Forward udpPacket next
                         with
@@ -52,7 +51,7 @@ type App (pipelineStages: IPipeline seq, logger: ILogger, socketCollection: Lazy
                     async {
                         try
                             if logger.IsEnabled LogEventLevel.Debug then
-                                logger.Debug ("App: UDP ({$Udp}) reverse to stage \"{StageName}\"", udpPacket, stage.Name)
+                                logger.Debug ("App: REVERSE {$Udp} to \"{StageName}\"", udpPacket, stage.Name)
 
                             do! stage.Reverse udpPacket next
                         with
@@ -82,7 +81,7 @@ type App (pipelineStages: IPipeline seq, logger: ILogger, socketCollection: Lazy
 
                 logger.Information ("App: Got {StageCount} pipelines.", Array.length pipelineStages.Value)
                 for index, stage in pipelineStages.Value |> Array.indexed do
-                    logger.Information ("App: {PipelineIndex} - {PipelineName}", index, stage.Name)
+                    logger.Information ("App: Stage {PipelineIndex} - {PipelineName}", index, stage.Name)
 
                 logger.Information "App: Starting listening sockets"
                 socketCollection.Value.StartAllClientSockets()
