@@ -25,18 +25,18 @@ type CacheConfig =
     { [<JsonProperty("ttl")>]   Ttl: TimeSpan
       [<JsonProperty("timer")>] TimerInterval: TimeSpan }
 
-        static member private DefaultTtl = TimeSpan.FromMinutes 10.0
-        static member private DefaultTimerInterval = TimeSpan.FromMinutes 1.0
+        static member private DefaultTtl           () = TimeSpan.FromMinutes 10.0
+        static member private DefaultTimerInterval () = TimeSpan.FromMinutes 1.0
 
 
 type DnsConfig =
-    { Timeout: TimeSpan }
+    { [<JsonProperty("timeout")>] Timeout: TimeSpan }
 
         static member private DefaultTimeout () = TimeSpan.FromSeconds 10.0
 
 
 type ConntrackConfig =
-    { Ttl: TimeSpan }
+    { [<JsonProperty("ttl")>] Ttl: TimeSpan }
 
         static member private DefaultTtl () = TimeSpan.FromMinutes 10.0
 
