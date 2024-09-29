@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="EchoRequest.fs" />
+    <Compile Include="CliArgs.fs" />
+    <Compile Include="Program.fs"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.IO.Hashing" />
+  </ItemGroup>
+
+</Project>
