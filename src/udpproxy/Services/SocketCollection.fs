@@ -24,7 +24,7 @@ type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan,
                        cacheFactory: ICacheFactory, packetHandler: Lazy<IPacketHandler>) =
 
     let logger = logger.ForContext<SocketCollection> ()
-    let upstreamSocketsCache = lazy (cacheFactory.Create ())
+    let upstreamSocketsCache = lazy (cacheFactory.Create "UdpSockets")
 
     let clientSockets =
         lazy (

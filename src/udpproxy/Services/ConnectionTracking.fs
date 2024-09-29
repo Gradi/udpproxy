@@ -34,7 +34,7 @@ type private ConnectionInfo (client: IPEndPoint, upstream: UdpSocket) =
 
 type ConnectionTracking (ttl: TimeSpan, cacheFactory: ICacheFactory) =
 
-    let entries = lazy (cacheFactory.Create ())
+    let entries = lazy (cacheFactory.Create "ConnectionTracking")
 
     interface IConnectionTracking with
 

@@ -22,7 +22,7 @@ type ICache =
 
 type ICacheFactory =
 
-    abstract Create: unit -> ICache
+    abstract Create: name: string -> ICache
 
 
 type private Entry (value: obj, ttl: TimeSpan, creationTime: TimeSpan) =
@@ -43,7 +43,7 @@ type private Entry (value: obj, ttl: TimeSpan, creationTime: TimeSpan) =
     member _.IsEntryOutdated (now: TimeSpan) = (now - lastAccessTime) >= ttl
 
 
-type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
+type Cache (ttl: TimeSpan, timerInterval: TimeSpan, name: string, logger: ILogger) =
 
     let logger = logger.ForContext<Cache> ()
     let entries = Dictionary<obj, Entry> ()
@@ -58,7 +58,7 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
                 | :? IDisposable as disposable -> disposable.Dispose ()
                 | _ -> ()
             with
-            | exc -> logger.Error (exc, "Cache: Error on disposing object of type {ObjectType}", (obj.GetType ()).FullName)
+            | exc -> logger.Error (exc, "Cache<{Name}>: Error on disposing object of type {ObjectType}", name, (obj.GetType ()).FullName)
 
     let onTimer () =
         let now = now ()
@@ -79,8 +79,8 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
                     List.iter (fun (key, _) -> entries.Remove key |> ignore) outdatedEntries
                     entries.Count)
 
-            logger.Debug ("Cache: Deleted {OutdatedCount} entries, before {BeforeCount}, after {AfterCount} entries.",
-                          List.length outdatedEntries, totalEntries, afterDeleteEntries)
+            logger.Debug ("Cache<{Name}>: Deleted {OutdatedCount} entries, before {BeforeCount}, after {AfterCount} entries.",
+                          name, List.length outdatedEntries, totalEntries, afterDeleteEntries)
 
             disposeValues (Seq.ofList outdatedEntries |> Seq.map snd)
 
@@ -92,7 +92,7 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
             try
                 onTimer ()
             with
-            | exc -> logger.Error (exc, "Cache: onTimer() error.")
+            | exc -> logger.Error (exc, "Cache<{Name}>: onTimer() error.", name)
 
             timer.Start ())
 
@@ -157,9 +157,9 @@ type CacheFactory (ttl: TimeSpan, timerInterval: TimeSpan, logger: ILogger) =
 
     interface ICacheFactory with
 
-        member this.Create () =
+        member this.Create name =
             lock this (fun () ->
-                let cache = new Cache(ttl, timerInterval, logger)
+                let cache = new Cache(ttl, timerInterval, name, logger)
                 allocatedCaches <- cache :: allocatedCaches
                 cache)
 
