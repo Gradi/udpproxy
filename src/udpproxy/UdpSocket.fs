@@ -49,7 +49,11 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
 
         match localEndpoint with
         | Choice1Of2 ip -> socket.Bind ip
-        | Choice2Of2 _ -> ()
+        | Choice2Of2 _ ->
+            match addressFamily with
+            | AddressFamily.InterNetwork -> socket.Bind (IPEndPoint (IPAddress.Any, 0))
+            | AddressFamily.InterNetworkV6 -> socket.Bind (IPEndPoint (IPAddress.IPv6Any, 0))
+            | _ -> ()
 
         logger.Debug ("UdpSocket<{$LocalEndpoint}>: Socket created.", socket.LocalEndPoint)
         socket)
@@ -78,7 +82,8 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     member _.Start () =
         lock this (fun () ->
             checkDisposed ()
-            if status = Receiving then ()
+            if status = Receiving then
+                ()
             else
 
                 socket.Value |> ignore

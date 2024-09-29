@@ -61,6 +61,10 @@ type PipelineBuilderJsonConverter () =
                                                         c.Resolve<Lazy<IConnectionTracking>>(), c.Resolve<ILogger> ()))
 
 
+    let readPacketReturn (_: JObject) : RegFunc =
+        (fun (c: IComponentContext) -> PacketReturnPipeline (c.Resolve<Lazy<IConnectionTracking>> (), c.Resolve<ILogger> ()))
+
+
     override this.CanConvert objectType = objectType = typeof<IPipelineBuilder>
 
     override this.WriteJson (_, _, _) =
@@ -74,6 +78,7 @@ type PipelineBuilderJsonConverter () =
             match metadata.Name.ToLower () with
             | "rndpad" -> readRndPad jObj |> finish metadata
             | "mailman" -> readMailman jObj |> finish metadata
+            | "packetreturn" -> readPacketReturn jObj |> finish metadata
             | t -> failwithf "Unknown pipeline type \"%s\"" t
 
         box pipeline

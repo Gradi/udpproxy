@@ -8,26 +8,28 @@ open UdpProxy
 
 type IConnectionTracking =
 
-    abstract TrackClient: IPEndPoint -> UdpSocket -> unit
+    abstract TrackConnection: client: (IPEndPoint * UdpSocket) -> upstream: UdpSocket -> unit
 
-    abstract TryGetClientSocket: IPEndPoint -> UdpSocket option
-
-
-type private ClientSockets () =
-
-    let mutable sockets = [|  |]
-
-    let set = HashSet<obj> ()
+    abstract TryGetClient: upstream: UdpSocket -> (IPEndPoint * UdpSocket) option
 
 
-    member this.AddSocket (socket: UdpSocket) =
+type private ConnectionInfo (client: IPEndPoint, upstream: UdpSocket) =
+
+    let mutable clientSockets = [|  |]
+
+    let clientSocketsSet = HashSet<obj> ()
+
+    member _.Client = client
+
+    member _.Upstream = upstream
+
+    member this.AddClientSocket (socket: UdpSocket) =
         lock this (fun () ->
-            if set.Add socket then
-                sockets <- Array.append sockets [| socket |])
+            if clientSocketsSet.Add socket then
+                clientSockets <- Array.append clientSockets [| socket |])
 
-
-    member this.GetRandomSocket () =
-        lock this (fun () -> Array.randomChoice sockets)
+    member this.GetRandomClientSocket () =
+        lock this (fun () -> Array.randomChoice clientSockets)
 
 
 type ConnectionTracking (ttl: TimeSpan, cacheFactory: ICacheFactory) =
@@ -36,27 +38,24 @@ type ConnectionTracking (ttl: TimeSpan, cacheFactory: ICacheFactory) =
 
     interface IConnectionTracking with
 
-        member this.TrackClient clientEndpoint clientSocket =
-            ArgumentNullException.ThrowIfNull (clientEndpoint, nameof(clientEndpoint))
-            ArgumentNullException.ThrowIfNull (clientSocket, nameof(clientSocket))
+        member this.TrackConnection client upstream =
+            let client, clientSocket = client
 
-            let clientSockets =
-                match entries.Value.TryGetTouch clientEndpoint : ClientSockets option with
-                | Some sockets -> sockets
+            let connectionInfo =
+                match entries.Value.TryGetTouch<ConnectionInfo> upstream with
+                | Some info -> info
                 | None ->
                     lock this (fun () ->
-                        match entries.Value.TryGetTouch clientEndpoint : ClientSockets option with
-                        | Some sockets -> sockets
+                        match entries.Value.TryGetTouch<ConnectionInfo> upstream with
+                        | Some info -> info
                         | None ->
-                            let sockets = ClientSockets ()
-                            entries.Value.PutWithTtl clientEndpoint sockets ttl
-                            sockets)
+                            let info = ConnectionInfo (client, upstream)
+                            entries.Value.PutWithTtl upstream info ttl
+                            info)
 
-            clientSockets.AddSocket clientSocket
+            connectionInfo.AddClientSocket clientSocket
 
-        member _.TryGetClientSocket clientEndpoint =
-            ArgumentNullException.ThrowIfNull (clientEndpoint, nameof(clientEndpoint))
-
-            match entries.Value.TryGetTouch clientEndpoint : ClientSockets option with
+        member _.TryGetClient upstream =
+            match entries.Value.TryGetTouch<ConnectionInfo> upstream with
             | None -> None
-            | Some sockets -> Some (sockets.GetRandomSocket ())
+            | Some info -> Some (info.Client, info.GetRandomClientSocket ())

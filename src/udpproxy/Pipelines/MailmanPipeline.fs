@@ -34,8 +34,8 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
                         logger.Debug ("Mailman: Sending out udp({$Udp}) to {$Address}({$ResolvedAddress}).", udpPacket,
                                       endpoint, address)
 
-                    conntrack.Value.TrackClient udpPacket.SourceEndpoint udpPacket.LocalSocket
                     let outputSocket = sockets.Value.GetOutputSocketForEndpoint address
+                    conntrack.Value.TrackConnection (udpPacket.SourceEndpoint, udpPacket.LocalSocket) outputSocket
                     do! outputSocket.Send udpPacket.Payload address
 
                     // Not calling next (intentionally)

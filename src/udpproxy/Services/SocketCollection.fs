@@ -36,15 +36,16 @@ type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan,
     interface ISocketCollection with
 
         member this.GetOutputSocketForEndpoint endpoint =
-            match upstreamSocketsCache.Value.TryGetTouch endpoint : UdpSocket option with
+            match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> endpoint with
             | Some socket -> socket
             | None ->
                 lock this (fun () ->
-                    match upstreamSocketsCache.Value.TryGetTouch endpoint : UdpSocket option with
+                    match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> endpoint with
                     | Some socket -> socket
                     | None ->
                         let socket = new UdpSocket (Choice2Of2 endpoint.AddressFamily, 1024 * 1024, packetHandler.Value.HandleUpstreamPacket, logger)
                         upstreamSocketsCache.Value.PutWithTtl endpoint socket connectionTtl
+                        socket.Start ()
                         socket)
 
 
