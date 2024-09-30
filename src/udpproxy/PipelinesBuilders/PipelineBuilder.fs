@@ -71,6 +71,12 @@ type PipelineBuilderJsonConverter () =
         (fun (c: IComponentContext) -> LZ4Pipeline (level, c.Resolve<ILogger> ()))
 
 
+    let readAligner (jobj: JObject) : RegFunc =
+        let alignBy = getProp<int> "alignBy" jobj
+
+        (fun (c: IComponentContext) -> AlignerPipeline (alignBy, c.Resolve<ICryptoRnd> (), c.Resolve<ILogger> ()))
+
+
     override this.CanConvert objectType = objectType = typeof<IPipelineBuilder>
 
     override this.WriteJson (_, _, _) =
@@ -86,6 +92,7 @@ type PipelineBuilderJsonConverter () =
             | "mailman" -> readMailman jObj |> finish metadata
             | "packetreturn" -> readPacketReturn jObj |> finish metadata
             | "lz4" -> readLZ4 jObj |> finish metadata
+            | "aligner" -> readAligner jObj |> finish metadata
             | t -> failwithf "Unknown pipeline type \"%s\"" t
 
         box pipeline

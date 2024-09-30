@@ -17,6 +17,7 @@
     <Compile Include="Tests\TestReflect.fs" />
     <Compile Include="Tests\Pipelines\TestRndPadPipeline.fs" />
     <Compile Include="Tests\Pipelines\TestLZ4Pipeline.fs" />
+    <Compile Include="Tests\Pipelines\TestAlignerPipeline.fs" />
     <Compile Include="Tests\TestNewtonsoftJson.fs" />
     
   </ItemGroup>

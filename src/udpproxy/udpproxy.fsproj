@@ -25,6 +25,7 @@
     <Compile Include="Pipelines\MailmanPipeline.fs" />
     <Compile Include="Pipelines\PacketReturnPipeline.fs" />
     <Compile Include="Pipelines\LZ4Pipeline.fs" />
+    <Compile Include="Pipelines\AlignerPipeline.fs" />
 
     <Compile Include="PipelinesBuilders\PipelineBuilder.fs" />
 
