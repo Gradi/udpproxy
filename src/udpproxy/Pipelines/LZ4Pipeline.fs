@@ -38,7 +38,7 @@ type LZ4Pipeline (level: int, logger: ILogger) =
                 let crc32 = Crc32.HashToUInt32 udpPacket.Payload
                 let originalLength = udpPacket.Length
 
-                let compressedPayload : byte array = Array.zeroCreate (originalLength * 2)
+                let compressedPayload : byte array = Array.zeroCreate ((originalLength * 2) + headerSize)
                 Bits.write<uint32> crc32 (Span<byte> (compressedPayload, 0, 4))
                 Bits.write<int> originalLength (Span<byte> (compressedPayload, 4, 4))
                 let compressedSize =
@@ -63,7 +63,7 @@ type LZ4Pipeline (level: int, logger: ILogger) =
 
                 let expectedCrc32 = Bits.read<uint32> (Span<byte> (udpPacket.Payload, 0, 4))
                 let originalLength = Bits.read<int> (Span<byte> (udpPacket.Payload, 4, 4))
-                if originalLength <= 0 || originalLength >= maximumUdpSize then
+                if originalLength < 0 || originalLength > maximumUdpSize then
                     raiseMsg "Uncompressed packet size has an invalid value (%d)" originalLength
 
                 let uncompressedPayload : byte array = Array.zeroCreate originalLength
@@ -76,7 +76,7 @@ type LZ4Pipeline (level: int, logger: ILogger) =
 
                 let actualCrc32 = Crc32.HashToUInt32 uncompressedPayload
                 if actualCrc32 <> expectedCrc32 then
-                    failwithf "CRC32 mismatch (0x%d not equal 0x%d)" actualCrc32 expectedCrc32
+                    failwithf "CRC32 mismatch (0x%x not equal 0x%x)" actualCrc32 expectedCrc32
 
                 do! next { udpPacket with Payload = uncompressedPayload }
             }
