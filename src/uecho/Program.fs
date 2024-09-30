@@ -1,5 +1,6 @@
 ﻿module UEcho.Program
 
+open System.Globalization
 open System.Text
 open System.Text.RegularExpressions
 open Argu
@@ -76,7 +77,7 @@ let (|HexPattern|_|) (str: string) =
     | true ->
         let hexBytes =
             result.Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            |> Array.map Byte.Parse
+            |> Array.map (fun num -> Byte.Parse (num.Substring 2, NumberStyles.AllowHexSpecifier))
         let sizeBytes = Int32.Parse result.Groups[3].Value
         let hexBytes = arrayFillUpto hexBytes sizeBytes
         Some (EchoRequest.make hexBytes)
