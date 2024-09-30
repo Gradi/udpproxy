@@ -1,7 +1,6 @@
 module TestUdpProxy.PipelineTestUtils
 
 open System.Net
-open System.Net.Sockets
 open NUnit.Framework
 open UdpProxy
 open UdpProxy.Pipelines

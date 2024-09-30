@@ -3,17 +3,20 @@
   <ItemGroup>
     <PackageReference Include="FsUnit" Version="6.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="CryptoRndMock.fs" />
+    <Compile Include="LoggerMock.fs" />
     <Compile Include="PipelineTestUtils.fs" />
 
     <Compile Include="Tests\TestBits.fs" />
     <Compile Include="Tests\TestReflect.fs" />
     <Compile Include="Tests\Pipelines\TestRndPadPipeline.fs" />
+    <Compile Include="Tests\Pipelines\TestLZ4Pipeline.fs" />
     <Compile Include="Tests\TestNewtonsoftJson.fs" />
     
   </ItemGroup>

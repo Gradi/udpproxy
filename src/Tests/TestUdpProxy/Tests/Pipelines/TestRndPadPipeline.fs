@@ -5,14 +5,14 @@ open NUnit.Framework
 open Serilog
 open System
 open TestUdpProxy
+open TestUdpProxy.PipelineTestUtils
 open UdpProxy.Pipelines
-open PipelineTestUtils
 
 
 [<TestFixture>]
 type TestRndPadPipeline () =
 
-    let getPipe min max : IPipeline = RndPadPipeline (min, max, Log.Logger, CryptoRndMock ())
+    let getPipe min max : IPipeline = RndPadPipeline (min, max, LoggerMock.logger, CryptoRndMock ())
 
     [<Test>]
     member _.BadCtorArgumentsCauseException () =
