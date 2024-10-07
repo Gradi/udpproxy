@@ -4,7 +4,6 @@ open K4os.Compression.LZ4
 open Serilog
 open Serilog.Events
 open System
-open System.IO.Hashing
 open UdpProxy
 open UdpProxy.Exceptions
 
@@ -26,7 +25,7 @@ type LZ4Pipeline (level: int, logger: ILogger) =
         | 12 -> LZ4Level.L12_MAX
         | _ -> LZ4Level.L12_MAX
 
-    let headerSize = 8
+    let headerSize = 4
     let maximumUdpSize = 1024 * 1024 * 10 // 10 MB. Upper limit. Just in case.
 
     interface IPipeline with
@@ -35,12 +34,10 @@ type LZ4Pipeline (level: int, logger: ILogger) =
 
         member this.Forward udpPacket next =
             async {
-                let crc32 = Crc32.HashToUInt32 udpPacket.Payload
                 let originalLength = udpPacket.Length
-
                 let compressedPayload : byte array = Array.zeroCreate ((originalLength * 2) + headerSize)
-                Bits.write<uint32> crc32 (Span<byte> (compressedPayload, 0, 4))
-                Bits.write<int> originalLength (Span<byte> (compressedPayload, 4, 4))
+
+                Bits.write<int> originalLength (Span<byte> (compressedPayload, 0, 4))
                 let compressedSize =
                     LZ4Codec.Encode (ReadOnlySpan<byte> udpPacket.Payload,
                                      Span<byte> (compressedPayload, headerSize, (Array.length compressedPayload) - headerSize),
@@ -61,8 +58,7 @@ type LZ4Pipeline (level: int, logger: ILogger) =
                 if udpPacket.Length < headerSize then
                     raiseMsg "Packet size is too small to be uncompressed."
 
-                let expectedCrc32 = Bits.read<uint32> (Span<byte> (udpPacket.Payload, 0, 4))
-                let originalLength = Bits.read<int> (Span<byte> (udpPacket.Payload, 4, 4))
+                let originalLength = Bits.read<int> (Span<byte> (udpPacket.Payload, 0, 4))
                 if originalLength < 0 || originalLength > maximumUdpSize then
                     raiseMsg "Uncompressed packet size has an invalid value (%d)" originalLength
 
@@ -73,10 +69,6 @@ type LZ4Pipeline (level: int, logger: ILogger) =
 
                 if uncompressedSize <= 0 then
                     failwithf "LZ4Codec.Decode(..) returned bad uncompressed size (%d)" uncompressedSize
-
-                let actualCrc32 = Crc32.HashToUInt32 uncompressedPayload
-                if actualCrc32 <> expectedCrc32 then
-                    failwithf "CRC32 mismatch (0x%x not equal 0x%x)" actualCrc32 expectedCrc32
 
                 do! next { udpPacket with Payload = uncompressedPayload }
             }
