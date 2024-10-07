@@ -34,7 +34,8 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
                         logger.Debug ("Mailman: Sending out {$Udp} to {$Address}(resolved: {$ResolvedAddress}).", udpPacket,
                                       endpoint, address)
 
-                    let outputSocket = sockets.Value.GetOutputSocketForEndpoint udpPacket.SourceEndpoint
+                    let key = udpPacket.SourceEndpoint
+                    let outputSocket = sockets.Value.GetUniqueOutputSocket key address.AddressFamily
                     conntrack.Value.TrackConnection (udpPacket.SourceEndpoint, udpPacket.LocalSocket) outputSocket
                     do! outputSocket.Send udpPacket.Payload address
 

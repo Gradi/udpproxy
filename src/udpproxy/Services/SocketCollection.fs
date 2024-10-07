@@ -1,5 +1,6 @@
 namespace UdpProxy.Services
 
+open System.Net.Sockets
 open Serilog
 open System
 open System.Net
@@ -15,7 +16,7 @@ type IPacketHandler =
 
 type ISocketCollection =
 
-    abstract GetOutputSocketForEndpoint : IPEndPoint -> UdpSocket
+    abstract GetUniqueOutputSocket : key: obj -> AddressFamily -> UdpSocket
 
     abstract StartAllClientSockets : unit -> unit
 
@@ -35,16 +36,17 @@ type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan,
 
     interface ISocketCollection with
 
-        member this.GetOutputSocketForEndpoint endpoint =
-            match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> endpoint with
+        member this.GetUniqueOutputSocket key addressFamily =
+            let key = box (key, addressFamily)
+            match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> key with
             | Some socket -> socket
             | None ->
                 lock this (fun () ->
-                    match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> endpoint with
+                    match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> key with
                     | Some socket -> socket
                     | None ->
-                        let socket = new UdpSocket (Choice2Of2 endpoint.AddressFamily, 1024 * 1024, packetHandler.Value.HandleUpstreamPacket, logger)
-                        upstreamSocketsCache.Value.PutWithTtl endpoint socket connectionTtl
+                        let socket = new UdpSocket (Choice2Of2 addressFamily, 1024 * 1024, packetHandler.Value.HandleUpstreamPacket, logger)
+                        upstreamSocketsCache.Value.PutWithTtl key socket connectionTtl
                         socket.Start ()
                         socket)
 

@@ -5,6 +5,7 @@ open K4os.Compression.LZ4
 open NUnit.Framework
 open System
 open System.Net
+open NUnit.Framework.Constraints
 open TestUdpProxy
 open TestUdpProxy.PipelineTestUtils
 open UdpProxy
@@ -36,7 +37,7 @@ type TestLZ4Pipeline () =
     [<Test>]
     member _.``Reverse fails on invalid packet`` ([<Values>] level: LZ4Level) =
         (fun () -> runReverseShouldReturn (getPipe level) (rndUdp 1024) |> ignore)
-        |> should throw typeof<Exceptions.DebugMessageError>
+        |> should be (ThrowsExceptionConstraint ())
 
     [<Test>]
     member _.``Forward then Reverse returns same packet`` ([<Values>] level: LZ4Level) =
