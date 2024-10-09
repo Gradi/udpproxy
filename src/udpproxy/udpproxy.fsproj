@@ -10,6 +10,7 @@
     <Compile Include="JObject.fs" />
     <Compile Include="Reflect.fs" />
     <Compile Include="RWLock.fs" />
+    <Compile Include="Span.fs" />
 
     <Compile Include="UdpSocket.fs" />
 
@@ -26,6 +27,7 @@
     <Compile Include="Pipelines\PacketReturnPipeline.fs" />
     <Compile Include="Pipelines\LZ4Pipeline.fs" />
     <Compile Include="Pipelines\AlignerPipeline.fs" />
+    <Compile Include="Pipelines\AesPipeline.fs" />
 
     <Compile Include="PipelinesBuilders\PipelineBuilder.fs" />
 

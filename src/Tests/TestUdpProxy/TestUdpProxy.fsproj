@@ -15,11 +15,13 @@
 
     <Compile Include="Tests\TestBits.fs" />
     <Compile Include="Tests\TestReflect.fs" />
+    <Compile Include="Tests\TestAes.fs" />
+    <Compile Include="Tests\TestSpan.fs" />
     <Compile Include="Tests\Pipelines\TestRndPadPipeline.fs" />
     <Compile Include="Tests\Pipelines\TestLZ4Pipeline.fs" />
     <Compile Include="Tests\Pipelines\TestAlignerPipeline.fs" />
+    <Compile Include="Tests\Pipelines\TestAesPipeline.fs" />
     <Compile Include="Tests\TestNewtonsoftJson.fs" />
-    
   </ItemGroup>
 
   <ItemGroup>

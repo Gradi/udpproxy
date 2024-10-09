@@ -77,6 +77,13 @@ type PipelineBuilderJsonConverter () =
         (fun (c: IComponentContext) -> AlignerPipeline (alignBy, c.Resolve<ICryptoRnd> (), c.Resolve<ILogger> ()))
 
 
+    let readAes (jobj: JObject) : RegFunc =
+        let aesKey = getProp<byte array> "aesKey" jobj
+        let hmacKec = getProp<byte array> "hmacKey" jobj
+
+        (fun (_: IComponentContext) -> AesPipeline (aesKey, hmacKec))
+
+
     override this.CanConvert objectType = objectType = typeof<IPipelineBuilder>
 
     override this.WriteJson (_, _, _) =
@@ -93,6 +100,7 @@ type PipelineBuilderJsonConverter () =
             | "packetreturn" -> readPacketReturn jObj |> finish metadata
             | "lz4" -> readLZ4 jObj |> finish metadata
             | "aligner" -> readAligner jObj |> finish metadata
+            | "aes" -> readAes jObj |> finish metadata
             | t -> failwithf "Unknown pipeline type \"%s\"" t
 
         box pipeline
