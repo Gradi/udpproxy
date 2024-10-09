@@ -78,7 +78,7 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     let mutable receivingTask = None
 
 
-    let sendQueue = ConcurrentBag<struct (byte array * IPEndPoint)> ()
+    let sendQueue = ConcurrentQueue<struct (byte array * IPEndPoint)> ()
     let newPacketEvent = new AutoResetEvent (false)
     let sendingTask =
         async {
@@ -92,7 +92,7 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                     let mutable isContinue = true
                     while isContinue && (not token.IsCancellationRequested) do
                         isContinue <-
-                            match sendQueue.TryTake () with
+                            match sendQueue.TryDequeue () with
                             | false, _ -> false
                             | true, struct (payload, remoteEndpoint) ->
                                 socket.Value.SendTo (ArraySegment<byte> payload, remoteEndpoint) |> ignore
@@ -148,7 +148,7 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
 
     member _.Send (buffer: byte array) (endpoint: IPEndPoint) =
         async {
-            sendQueue.Add (struct (buffer, endpoint))
+            sendQueue.Enqueue (struct (buffer, endpoint))
             newPacketEvent.Set () |> ignore
         }
 
