@@ -7,6 +7,7 @@ open Microsoft.FSharp.Reflection
 open Newtonsoft.Json
 open System
 open System.Reflection
+open Newtonsoft.Json.Converters
 open Newtonsoft.Json.Linq
 open UdpProxy.PipelinesBuilders
 open UdpProxy.Services
@@ -246,6 +247,7 @@ let configure () =
     settings.Converters.Add (RecordJsonConverter ())
     settings.Converters.Add (EndpointJsonConverter ())
     settings.Converters.Add (PipelineBuilderJsonConverter ())
+    settings.Converters.Add (StringEnumConverter () )
     JsonConvert.DefaultSettings <- (fun () -> settings)
 
 
