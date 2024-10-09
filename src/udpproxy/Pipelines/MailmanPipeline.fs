@@ -18,7 +18,12 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
 
     interface IPipeline with
 
-        member this.Name = sprintf "Mailman (%O)" outputEndpoints
+        member this.Name =
+            let hosts =
+                outputEndpoints
+                |> List.map _.ToString()
+                |> String.concat ", "
+            sprintf "Mailman ([%s])" hosts
 
         member this.Forward udpPacket _ =
             async {
