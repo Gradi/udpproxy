@@ -98,10 +98,10 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                 status <- Receiving
                 receivingTask <-
                     async {
-                        try
-                            let buffer : byte array = Array.zeroCreate bufferSize
+                        let buffer : byte array = Array.zeroCreate bufferSize
+                        while not cancelToken.IsCancellationRequested do
+                            try
 
-                            while not cancelToken.IsCancellationRequested do
                                 let! message =
                                     socket.Value.ReceiveMessageFromAsync(ArraySegment<byte> buffer, SocketFlags.None, anyEndpoint.Value, cancelToken.Token)
                                      .AsTask()
@@ -112,11 +112,12 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                                     Array.Copy (buffer, 0, udpPayload, 0, message.ReceivedBytes)
                                     receiveUdpPacket udpPayload (message.RemoteEndPoint :?> IPEndPoint)
 
-                        with
-                        | :? OperationCanceledException -> ()
-                        | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
-                        | exc ->
-                            logger.Error (exc, "UdpSocket<{$LocalEndpoint}>: Receive error. Socket now is not receiving.", socket.Value.LocalEndPoint)
+                            with
+                            | :? OperationCanceledException -> ()
+                            | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
+                            | exc ->
+                                logger.Error (exc, "UdpSocket<{$LocalEndpoint}>: Receive error: {ErrorMessage}", socket.Value.LocalEndPoint, exc.Message)
+                                do! Async.Sleep (TimeSpan.FromSeconds 3.0)
                     }
                     |> Async.StartAsTask)
 
