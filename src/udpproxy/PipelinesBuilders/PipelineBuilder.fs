@@ -44,7 +44,7 @@ type PipelineBuilderJsonConverter () =
             | false -> reg
             | true -> (fun c -> InvertedPipeline (reg c))
 
-        PipelineBuilder (fun container -> container.Register<IPipeline>(reg).SingleInstance().AsSelf() |> ignore)
+        PipelineBuilder (fun container -> container.Register<IPipeline>(reg).InstancePerDependency().AsSelf() |> ignore)
 
 
     let readRndPad (jobj: JObject) : RegFunc =
