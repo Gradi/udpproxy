@@ -54,7 +54,7 @@ type ProxyConfig =
       [<JsonProperty("pipeline")>]    PipelinesBuilders: PipelinesBuilders }
 
 
-        static member private DefaultLog () = { LogConfig.Level = LogEventLevel.Verbose
+        static member private DefaultLog () = { LogConfig.Level = LogEventLevel.Information
                                                 LogFile = None
                                                 ConsoleLog = true }
 
