@@ -112,8 +112,6 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                                     Array.Copy (buffer, 0, udpPayload, 0, message.ReceivedBytes)
                                     receiveUdpPacket udpPayload (message.RemoteEndPoint :?> IPEndPoint)
 
-                                Array.Clear buffer
-
                         with
                         | :? OperationCanceledException -> ()
                         | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
