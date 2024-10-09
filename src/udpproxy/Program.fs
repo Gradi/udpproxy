@@ -1,7 +1,5 @@
 ﻿module UdpProxy.Program
 
-open System.Runtime.InteropServices
-open System.Threading
 open Argu
 open Autofac
 open Configuration
@@ -9,7 +7,8 @@ open Serilog
 open System
 open System.Globalization
 open System.IO
-open UdpProxy.Configuration
+open System.Runtime.InteropServices
+open System.Threading
 open UdpProxy.Services
 
 
