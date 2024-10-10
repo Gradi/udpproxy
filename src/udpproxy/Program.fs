@@ -103,6 +103,14 @@ let runProxy (args: ParseResults<RunArgs>) =
     }
 
 
+let genKey (args: ParseResults<GenKeyArgs>) =
+    async {
+        let length = args.GetResult (GenKeyArgs.Length, defaultValue = 32)
+        let key = System.Security.Cryptography.RandomNumberGenerator.GetBytes length
+        printfn "%s" (Convert.ToBase64String key)
+    }
+
+
 
 [<EntryPoint>]
 let main argv =
@@ -130,6 +138,9 @@ let main argv =
 
             | [ CliArgs.Run args ] ->
                 runProxy args
+
+            | [ CliArgs.GenKey args ] ->
+                genKey args
 
             | xs ->
                 printfn "Too many (%d) arguments." (List.length xs)
