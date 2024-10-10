@@ -62,6 +62,7 @@ SUBCOMMANDS:
 
     run <options>         Run proxy.
     readprint <options>   Read config file, enrich it with default values and print to stdout.
+    genkey <options>      Generates encryption/hmac key and prints it to stdout.
 
     Use 'udpproxy <subcommand> --help' for additional information.
 
