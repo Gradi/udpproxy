@@ -1,0 +1,110 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36" version="24.7.17">
+  <diagram name="Page-1" id="jAGETfziNzxkiUhc2NVC">
+    <mxGraphModel dx="1633" dy="1153" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="4681" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="lGpFU9PZjWgaphjDOzPi-5" target="lGpFU9PZjWgaphjDOzPi-15" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-18" value="UDP" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="lGpFU9PZjWgaphjDOzPi-16" connectable="0" vertex="1">
+          <mxGeometry x="0.3037" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-15" value="Network" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="245" y="850" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-17" value="Client (PC, etc)" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" parent="1" vertex="1">
+          <mxGeometry x="120" y="220" width="380" height="570" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="lGpFU9PZjWgaphjDOzPi-17" source="lGpFU9PZjWgaphjDOzPi-3" target="lGpFU9PZjWgaphjDOzPi-5" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-7" value="UDP" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="lGpFU9PZjWgaphjDOzPi-6" connectable="0" vertex="1">
+          <mxGeometry x="-0.1232" y="4" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-3" value="OS Process" style="rounded=1;whiteSpace=wrap;html=1;" parent="lGpFU9PZjWgaphjDOzPi-17" vertex="1">
+          <mxGeometry x="125" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-5" value="UDP proxy (OS process)" style="swimlane;whiteSpace=wrap;html=1;" parent="lGpFU9PZjWgaphjDOzPi-17" vertex="1">
+          <mxGeometry x="20" y="150" width="330" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="lGpFU9PZjWgaphjDOzPi-5" source="lGpFU9PZjWgaphjDOzPi-9" target="lGpFU9PZjWgaphjDOzPi-10" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-9" value="Stage: Encrypt packet" style="rounded=1;whiteSpace=wrap;html=1;" parent="lGpFU9PZjWgaphjDOzPi-5" vertex="1">
+          <mxGeometry x="30" y="170" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-10" value="Stage: Transmit packet" style="rounded=1;whiteSpace=wrap;html=1;" parent="lGpFU9PZjWgaphjDOzPi-5" vertex="1">
+          <mxGeometry x="30" y="290" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="lGpFU9PZjWgaphjDOzPi-5" source="lGpFU9PZjWgaphjDOzPi-11" target="lGpFU9PZjWgaphjDOzPi-9" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-11" value="Stage: Pad packet with random bytes" style="rounded=1;whiteSpace=wrap;html=1;" parent="lGpFU9PZjWgaphjDOzPi-5" vertex="1">
+          <mxGeometry x="30" y="50" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ClFZUtbH8a3QtC96d9W_-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.55;exitY=0.95;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="lGpFU9PZjWgaphjDOzPi-21" target="srGvNQmHlZ0DIDfGzfQ2-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ClFZUtbH8a3QtC96d9W_-6" value="UDP" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ClFZUtbH8a3QtC96d9W_-2">
+          <mxGeometry x="-0.2" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lGpFU9PZjWgaphjDOzPi-21" value="Network" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="790" y="80" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-7" value="Server (VPS, etc)" style="swimlane;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fontStyle=1;fillColor=default;" parent="1" vertex="1">
+          <mxGeometry x="660" y="220" width="380" height="570" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-8" value="UDP proxy (OS process]" style="swimlane;whiteSpace=wrap;html=1;" parent="srGvNQmHlZ0DIDfGzfQ2-7" vertex="1">
+          <mxGeometry x="25" y="40" width="330" height="410" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="srGvNQmHlZ0DIDfGzfQ2-8" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="165" y="130" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-12" value="Stage: Transmit packet" style="rounded=1;whiteSpace=wrap;html=1;" parent="srGvNQmHlZ0DIDfGzfQ2-8" vertex="1">
+          <mxGeometry x="30" y="280" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="srGvNQmHlZ0DIDfGzfQ2-8" source="srGvNQmHlZ0DIDfGzfQ2-14" target="srGvNQmHlZ0DIDfGzfQ2-16" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-14" value="Stage: Encrypt packet (inverse)" style="rounded=1;whiteSpace=wrap;html=1;" parent="srGvNQmHlZ0DIDfGzfQ2-8" vertex="1">
+          <mxGeometry x="30" y="40" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="srGvNQmHlZ0DIDfGzfQ2-8" source="srGvNQmHlZ0DIDfGzfQ2-16" target="srGvNQmHlZ0DIDfGzfQ2-12" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="srGvNQmHlZ0DIDfGzfQ2-16" value="Stage: Pad packet with rnd bytes (inverse)" style="rounded=1;whiteSpace=wrap;html=1;" parent="srGvNQmHlZ0DIDfGzfQ2-8" vertex="1">
+          <mxGeometry x="30" y="150" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ClFZUtbH8a3QtC96d9W_-4" value="Internet" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="790" y="850" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ClFZUtbH8a3QtC96d9W_-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="srGvNQmHlZ0DIDfGzfQ2-8" target="ClFZUtbH8a3QtC96d9W_-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ClFZUtbH8a3QtC96d9W_-7" value="UDP" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ClFZUtbH8a3QtC96d9W_-5">
+          <mxGeometry x="0.6444" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ClFZUtbH8a3QtC96d9W_-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.55;exitY=0.95;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.4;entryY=0.1;entryDx=0;entryDy=0;entryPerimeter=0;curved=1;" edge="1" parent="1" source="lGpFU9PZjWgaphjDOzPi-15" target="lGpFU9PZjWgaphjDOzPi-21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="311" y="940" />
+              <mxPoint x="540" y="940" />
+              <mxPoint x="540" y="88" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
