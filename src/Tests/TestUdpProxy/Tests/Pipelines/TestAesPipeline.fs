@@ -19,12 +19,12 @@ type TestAesPipeline () =
         AesPipeline (key, hmacKey) :> IPipeline
 
     [<Test>]
-    member _.``Forward doesnt throw errors`` ([<Range(0, 50, 1)>] size: int) =
+    member _.``Forward doesnt throw errors`` ([<Range(0, 50)>] size: int) =
         (fun () -> runForwardShouldReturn (getPipe ()) (rndUdp size) |> ignore)
         |> should not' (be (ThrowsExceptionConstraint ()))
 
     [<Test>]
-    member _.``Forward changes payload`` ([<Range(0, 50, 1)>] size: int) =
+    member _.``Forward changes payload`` ([<Range(0, 50)>] size: int) =
         let input = rndUdp size
         let output = runForwardShouldReturn (getPipe ()) input
 
@@ -37,12 +37,12 @@ type TestAesPipeline () =
         |> should not' (equalSeq (Seq.ofArray input.Payload))
 
     [<Test>]
-    member _.``Reverse throws on invalid packet`` ([<Range(0, 50, 1)>] size: int) =
+    member _.``Reverse throws on invalid packet`` ([<Range(0, 50)>] size: int) =
         (fun () -> runReverseShouldReturn (getPipe ()) (rndUdp size) |> ignore)
         |> should be (ThrowsExceptionConstraint ())
 
     [<Test>]
-    member _.``Forward then Reverse returns same payload`` ([<Range(0, 50, 1)>] size: int) =
+    member _.``Forward then Reverse returns same payload`` ([<Range(0, 50)>] size: int) =
         let input = rndUdp size
         let pipe = getPipe ()
         let output =
@@ -56,7 +56,7 @@ type TestAesPipeline () =
         |> should equalSeq (Seq.ofArray input.Payload)
 
     [<Test>]
-    member _.``Reverse fails on byte change`` ([<Range(0, 50, 1)>] size: int) =
+    member _.``Reverse fails on byte change`` ([<Range(0, 50)>] size: int) =
         let pipe = getPipe ()
         let encrypted = runForwardShouldReturn pipe (rndUdp size)
 

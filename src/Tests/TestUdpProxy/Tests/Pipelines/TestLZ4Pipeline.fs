@@ -35,6 +35,14 @@ type TestLZ4Pipeline () =
         |> should be (lessThanOrEqualTo (zerosSize / 2))
 
     [<Test>]
+    member _.``Forward actually changes packet`` ([<Values>] level: LZ4Level) =
+        let input = rndUdp 100
+        let output = runForwardShouldReturn (getPipe level) input
+
+        (Seq.ofArray output.Payload)
+        |> should not' (equalSeq (Seq.ofArray input.Payload))
+
+    [<Test>]
     member _.``Reverse fails on invalid packet`` ([<Values>] level: LZ4Level) =
         (fun () -> runReverseShouldReturn (getPipe level) (rndUdp 1024) |> ignore)
         |> should be (ThrowsExceptionConstraint ())

@@ -45,6 +45,14 @@ type TestRndPadPipeline () =
         |> should be (greaterThanOrEqualTo (packetSize + 10))
 
     [<Test>]
+    member _.ForwardChangesPacket ([<Range(0, 1024)>] packetSize: int) =
+        let input = rndUdp packetSize
+        let output = runForwardShouldReturn (getPipe 10 1024) input
+
+        (Seq.ofArray output.Payload)
+        |> should not' (equalSeq (Seq.ofArray input.Payload))
+
+    [<Test>]
     member _.ForwardReverseReturnsSamePacket ([<Range(0, 1024)>] packetSize: int) =
         let input = rndUdp packetSize
         let pipe = getPipe 10 1024

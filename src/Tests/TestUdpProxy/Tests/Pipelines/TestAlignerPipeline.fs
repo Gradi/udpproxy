@@ -36,6 +36,14 @@ type TestAlignerPipeline () =
         (packetLength % alignBy) |> should equal 0
         packetLength |> should be (greaterThan 0)
 
+    [<Test>]
+    member _.``Forward actually changes packet`` ([<Range(1, 1010, 10)>] alignBy: int) =
+        let input = rndUdp 132
+        let output = runForwardShouldReturn (getPipe alignBy) input
+
+        (Seq.ofArray output.Payload)
+        |> should not' (equalSeq (Seq.ofArray input.Payload))
+
     [<Test;Repeat(10)>]
     member _.``Reverse throws on invalid packet`` () =
         (fun () -> runReverseShouldReturn (getPipe 1000) (rndUdp 122) |> ignore)
