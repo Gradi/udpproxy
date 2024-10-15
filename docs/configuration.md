@@ -70,7 +70,7 @@ Configures listening addresses & ports.
 
 ### pipeline
 
-Array of JSON objects each configuring particular pipeline. See [Pipeline reference](docs/pipelinesref.md).
+Array of JSON objects each configuring particular pipeline. See [Pipeline reference](pipelinesref.md).
 
 Configures pipeline, i.e, what and in what order to do with incoming UDP packets. No need
 to configure reverse pipeline.
