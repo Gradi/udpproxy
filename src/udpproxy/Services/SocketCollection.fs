@@ -33,22 +33,35 @@ type SocketCollection (inputEndpoints: IPEndPoint list, connectionTtl: TimeSpan,
             |> List.map (fun en -> new UdpSocket (Choice1Of2 en, 1024 * 1024, packetHandler.Value.HandleClientPacket, logger))
             |> Array.ofList)
 
+#if EventSourceProviders
+    do
+        SocketCollectionEventSource.Instance.Created ()
+#endif
+
 
     interface ISocketCollection with
 
         member this.GetUniqueOutputSocket key addressFamily =
+#if EventSourceProviders
+            SocketCollectionEventSource.Instance.GetUniqueOutputSocketEnter ()
+#endif
             let key = box (key, addressFamily)
-            match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> key with
-            | Some socket -> socket
-            | None ->
-                lock this (fun () ->
-                    match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> key with
-                    | Some socket -> socket
-                    | None ->
-                        let socket = new UdpSocket (Choice2Of2 addressFamily, 1024 * 1024, packetHandler.Value.HandleUpstreamPacket, logger)
-                        upstreamSocketsCache.Value.PutWithTtl key socket connectionTtl
-                        socket.Start ()
-                        socket)
+            let socket =
+                match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> key with
+                | Some socket -> socket
+                | None ->
+                    lock this (fun () ->
+                        match upstreamSocketsCache.Value.TryGetTouch<UdpSocket> key with
+                        | Some socket -> socket
+                        | None ->
+                            let socket = new UdpSocket (Choice2Of2 addressFamily, 1024 * 1024, packetHandler.Value.HandleUpstreamPacket, logger)
+                            upstreamSocketsCache.Value.PutWithTtl key socket connectionTtl
+                            socket.Start ()
+                            socket)
+#if EventSourceProviders
+            SocketCollectionEventSource.Instance.GetUniqueOutputSocketExit ()
+#endif
+            socket
 
 
         member this.StartAllClientSockets () =

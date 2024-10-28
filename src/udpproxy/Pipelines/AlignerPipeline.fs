@@ -15,6 +15,9 @@ type AlignerPipeline (alignBy: int, cryptoRnd: ICryptoRnd, logger: ILogger) =
     do
         if alignBy <= 0 then
             failwithf "Align value (%d) is less than zero." alignBy
+#if EventSourceProviders
+        PipelineEventSource.Instance.AlignerCreated ()
+#endif
 
     interface IPipeline with
 
@@ -22,6 +25,9 @@ type AlignerPipeline (alignBy: int, cryptoRnd: ICryptoRnd, logger: ILogger) =
 
         member this.Forward udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ForwardAligner ()
+#endif
                 let lengthWithHeader = udpPacket.Length + headerLength
                 let paddingLength = alignBy - (lengthWithHeader % alignBy)
                 let newLength = lengthWithHeader + paddingLength
@@ -30,6 +36,9 @@ type AlignerPipeline (alignBy: int, cryptoRnd: ICryptoRnd, logger: ILogger) =
 
                 Bits.write<int> paddingLength (Span<byte> (newPayload, 0, headerLength))
                 Array.Copy (udpPacket.Payload, 0, newPayload, headerLength, udpPacket.Length)
+#if EventSourceProviders
+                PipelineEventSource.Instance.AlignerRandomGeneration ()
+#endif
                 cryptoRnd.Fill (Span<byte> (newPayload, lengthWithHeader, paddingLength))
 
                 if logger.IsEnabled LogEventLevel.Debug then
@@ -40,6 +49,9 @@ type AlignerPipeline (alignBy: int, cryptoRnd: ICryptoRnd, logger: ILogger) =
 
         member this.Reverse udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ReverseAligner ()
+#endif
                 if udpPacket.Length < headerLength then
                     raiseMsg "Packet size is too small to be unaligned."
 

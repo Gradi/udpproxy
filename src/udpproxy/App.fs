@@ -15,6 +15,11 @@ type IApp =
 
 type App (pipelineStages: Lazy<IPipeline seq>, logger: ILogger, socketCollection: Lazy<ISocketCollection>) =
 
+#if EventSourceProviders
+    do
+        AppEventSource.Instance.Created ()
+#endif
+
     let logger = logger.ForContext<App> ()
 
     let pipelineStages = lazy ( pipelineStages.Value |> Array.ofSeq )
@@ -39,9 +44,22 @@ type App (pipelineStages: Lazy<IPipeline seq>, logger: ILogger, socketCollection
                                           stage.Name, stage.GetType(), udpPacket)
                     })
 
-            pipelineStages.Value
-            |> Array.rev
-            |> Array.fold forwardFolder (fun _ -> async { return () })
+            let headFunc =
+                pipelineStages.Value
+                |> Array.rev
+                |> Array.fold forwardFolder (fun _ ->
+#if EventSourceProviders
+                    AppEventSource.Instance.ForwardEntrypointExit ()
+#endif
+                    async { return () })
+
+#if EventSourceProviders
+            (fun packet ->
+                AppEventSource.Instance.ForwardEntrypointEnter ()
+                headFunc packet)
+#else
+            headFunc
+#endif
         )
 
     let reverseEntrypoint =
@@ -64,8 +82,21 @@ type App (pipelineStages: Lazy<IPipeline seq>, logger: ILogger, socketCollection
                                           stage.Name, stage.GetType (), udpPacket)
                     })
 
-            pipelineStages.Value
-            |> Array.fold reverseFolder (fun _ -> async { return () })
+            let headFunc =
+                pipelineStages.Value
+                |> Array.fold reverseFolder (fun _ ->
+#if EventSourceProviders
+                    AppEventSource.Instance.ReverseEntrypointExit ()
+#endif
+                    async { return () })
+
+#if EventSourceProviders
+            (fun packet ->
+                AppEventSource.Instance.ReverseEntrypointEnter ()
+                headFunc packet)
+#else
+            headFunc
+#endif
         )
 
 
@@ -87,8 +118,14 @@ type App (pipelineStages: Lazy<IPipeline seq>, logger: ILogger, socketCollection
                 socketCollection.Value.StartAllClientSockets()
 
                 logger.Information "App: Proxy now is running..."
+#if EventSourceProviders
+                AppEventSource.Instance.Run ()
+#endif
                 let! _ = Async.AwaitWaitHandle cancelToken.WaitHandle
                 logger.Information "App: Shutting down..."
+#if EventSourceProviders
+                AppEventSource.Instance.Stop ()
+#endif
             }
 
     interface IPacketHandler with

@@ -10,6 +10,11 @@ open UdpProxy.Exceptions
 
 type LZ4Pipeline (level: int, logger: ILogger) =
 
+#if EventSourceProviders
+    do
+        PipelineEventSource.Instance.LZ4Created ()
+#endif
+
     let lz4Level =
         match level with
         | value when value < 3 -> LZ4Level.L00_FAST
@@ -34,10 +39,16 @@ type LZ4Pipeline (level: int, logger: ILogger) =
 
         member this.Forward udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ForwardLZ4 ()
+#endif
                 let originalLength = udpPacket.Length
                 let compressedPayload : byte array = Array.zeroCreate ((originalLength * 2) + headerSize)
 
                 Bits.write<int> originalLength (Span<byte> (compressedPayload, 0, 4))
+#if EventSourceProviders
+                PipelineEventSource.Instance.LZ4Encode ()
+#endif
                 let compressedSize =
                     LZ4Codec.Encode (ReadOnlySpan<byte> udpPacket.Payload,
                                      Span<byte> (compressedPayload, headerSize, (Array.length compressedPayload) - headerSize),
@@ -55,6 +66,9 @@ type LZ4Pipeline (level: int, logger: ILogger) =
 
         member this.Reverse udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ReverseLZ4 ()
+#endif
                 if udpPacket.Length < headerSize then
                     raiseMsg "Packet size is too small to be uncompressed."
 
@@ -63,6 +77,9 @@ type LZ4Pipeline (level: int, logger: ILogger) =
                     raiseMsg "Uncompressed packet size has an invalid value (%d)" originalLength
 
                 let uncompressedPayload : byte array = Array.zeroCreate originalLength
+#if EventSourceProviders
+                PipelineEventSource.Instance.LZ4Decode()
+#endif
                 let uncompressedSize =
                     LZ4Codec.Decode (ReadOnlySpan<byte> (udpPacket.Payload, headerSize, udpPacket.Length - headerSize),
                                      Span<byte> uncompressedPayload)

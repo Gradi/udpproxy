@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Threading
 open UdpProxy.RWLock
+open UdpProxy
 
 
 type ICache =
@@ -45,6 +46,11 @@ type private Entry (value: obj, ttl: TimeSpan, creationTime: TimeSpan) =
 
 type Cache (ttl: TimeSpan, timerInterval: TimeSpan, name: string, logger: ILogger) =
 
+#if EventSourceProviders
+    do
+        CacheEventSource.Instance.Created ()
+#endif
+
     let logger = logger.ForContext<Cache> ()
     let entries = Dictionary<obj, Entry> ()
     let locker = new ReaderWriterLockSlim ()
@@ -61,6 +67,9 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, name: string, logger: ILogge
             | exc -> logger.Error (exc, "Cache<{Name}>: Error on disposing object of type {ObjectType}", name, (obj.GetType ()).FullName)
 
     let onTimer () =
+#if EventSourceProviders
+        CacheEventSource.Instance.OnTimerEnter ()
+#endif
         let now = now ()
 
         let outdatedEntries, totalEntries =
@@ -72,6 +81,9 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, name: string, logger: ILogge
                     |> Seq.map (fun kv -> (kv.Key, kv.Value.Value))
                     |> List.ofSeq
                 (outdatedEntries, totalEntries))
+#if EventSourceProviders
+        CacheEventSource.Instance.OutdatedEntriesFetched ()
+#endif
 
         if not (List.isEmpty outdatedEntries) then
             let afterDeleteEntries =
@@ -81,6 +93,9 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, name: string, logger: ILogge
 
             logger.Debug ("Cache<{Name}>: Deleted {OutdatedCount} entries, before {BeforeCount}, after {AfterCount} entries.",
                           name, List.length outdatedEntries, totalEntries, afterDeleteEntries)
+#if EventSourceProviders
+            CacheEventSource.Instance.OutdatedEntriesDeleted afterDeleteEntries
+#endif
 
             disposeValues (Seq.ofList outdatedEntries |> Seq.map snd)
 
@@ -111,36 +126,74 @@ type Cache (ttl: TimeSpan, timerInterval: TimeSpan, name: string, logger: ILogge
     interface ICache with
 
         member this.TryGet<'a> key =
+#if EventSourceProviders
+            CacheEventSource.Instance.TryGet ()
+#endif
             ArgumentNullException.ThrowIfNull (key, nameof(key))
 
             readLock locker (fun () ->
-                match entries.TryGetValue key with
-                | false, _ -> None
-                | true, value -> Some (this.Cast<'a> value.Value))
+                let result =
+                    match entries.TryGetValue key with
+                    | false, _ -> None
+                    | true, value -> Some (this.Cast<'a> value.Value)
+#if EventSourceProviders
+                match result with
+                | Some _ -> CacheEventSource.Instance.TryGetSome ()
+                | None -> CacheEventSource.Instance.TryGetNone ()
+#endif
+                result)
 
         member this.TryGetTouch<'a> key =
+#if EventSourceProviders
+            CacheEventSource.Instance.TryGetTouch ()
+#endif
             ArgumentNullException.ThrowIfNull (key, nameof(key))
 
             readLock locker (fun () ->
-                match entries.TryGetValue key with
-                | false, _ -> None
-                | true, value ->
-                    value.Touch (now ())
-                    Some (this.Cast<'a> value.Value))
+                let result =
+                    match entries.TryGetValue key with
+                    | false, _ -> None
+                    | true, value ->
+                        value.Touch (now ())
+                        Some (this.Cast<'a> value.Value)
+#if EventSourceProviders
+                match result with
+                | None -> CacheEventSource.Instance.TryGetTouchNone ()
+                | Some _ -> CacheEventSource.Instance.TryGetTouchSome ()
+#endif
+                result)
 
         member _.Put<'a> (key: obj) (value: 'a) =
+#if EventSourceProviders
+            CacheEventSource.Instance.PutEnter ()
+#endif
             ArgumentNullException.ThrowIfNull (key, nameof(key))
             writeLock locker (fun () -> entries[key] <- Entry (box value, ttl, now ()))
+#if EventSourceProviders
+            CacheEventSource.Instance.PutExit ()
+#endif
 
         member _.PutWithTtl<'a> (key: obj) (value: 'a) (ttl: TimeSpan) =
+#if EventSourceProviders
+            CacheEventSource.Instance.PutWithTtlEnter ()
+#endif
             ArgumentNullException.ThrowIfNull (key, nameof(key))
             if ttl < TimeSpan.Zero then failwithf "TTL is less than zero (%O)" ttl
 
             writeLock locker (fun () -> entries[key] <- Entry (box value, ttl, now ()))
+#if EventSourceProviders
+            CacheEventSource.Instance.PutWithTtlExit ()
+#endif
 
         member _.Delete key =
+#if EventSourceProviders
+            CacheEventSource.Instance.DeleteEnter ()
+#endif
             if not (isNull key) then
                 writeLock locker (fun () -> entries.Remove key |> ignore)
+#if EventSourceProviders
+            CacheEventSource.Instance.DeleteExit ()
+#endif
 
     interface IDisposable with
 

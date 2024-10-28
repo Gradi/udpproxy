@@ -21,6 +21,9 @@ type RndPadPipeline (minBytes: int, maxBytes: int, logger: ILogger, cryptoRnd: I
         if maxBytes - minBytes = 0 then
             logger.Warning ("RndPadPipeline: Will not pad packets with random bytes because maxBytes({MaxBytes}) - minBytes({MinBytes}) is 0.",
                             maxBytes, minBytes)
+#if EventSourceProviders
+        PipelineEventSource.Instance.RndPadCreated ()
+#endif
 
     let prefixLengthBytes =
         // Calculate byte length of packet prefix
@@ -53,6 +56,9 @@ type RndPadPipeline (minBytes: int, maxBytes: int, logger: ILogger, cryptoRnd: I
 
         member this.Forward udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ForwardRndPad ()
+#endif
                 match shouldPad with
                 | false -> return! next udpPacket
                 | true ->
@@ -62,12 +68,18 @@ type RndPadPipeline (minBytes: int, maxBytes: int, logger: ILogger, cryptoRnd: I
                     writePrefix rndPadLength (newPayload.AsSpan(0, prefixLengthBytes))
                     Array.Copy (udpPacket.Payload, 0, newPayload, prefixLengthBytes, udpPacket.Length)
                     cryptoRnd.Fill (newPayload.AsSpan(prefixLengthBytes + udpPacket.Length))
+#if EventSourceProviders
+                    PipelineEventSource.Instance.RndPadRandomGeneration ()
+#endif
 
                     return! next { udpPacket with Payload = newPayload }
             }
 
         member this.Reverse udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ReverseRndPad ()
+#endif
                 match shouldPad with
                 | false -> return! next udpPacket
                 | true ->

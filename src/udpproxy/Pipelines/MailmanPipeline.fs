@@ -3,6 +3,7 @@ namespace UdpProxy.Pipelines
 open Serilog
 open Serilog.Events
 open UdpProxy.Services
+open UdpProxy
 
 
 type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: Lazy<ISocketCollection>,
@@ -16,6 +17,11 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
             |> Array.ofList
         )
 
+#if EventSourceProviders
+    do
+        PipelineEventSource.Instance.MailmanCreated ()
+#endif
+
     interface IPipeline with
 
         member this.Name =
@@ -27,6 +33,9 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
 
         member this.Forward udpPacket _ =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ForwardMailman ()
+#endif
                 match outputAddresses.Value with
                 | [|  |] ->
                     if logger.IsEnabled LogEventLevel.Debug then
@@ -47,5 +56,9 @@ type MailmanPipeline (outputEndpoints: Endpoint list, dns: Lazy<IDns>, sockets: 
                     // Not calling next (intentionally)
             }
 
-        member this.Reverse udpPacket next = next udpPacket
+        member this.Reverse udpPacket next =
+#if EventSourceProviders
+            PipelineEventSource.Instance.ReverseMailman ()
+#endif
+            next udpPacket
 

@@ -24,21 +24,35 @@ type private ConnectionInfo (client: IPEndPoint, upstream: UdpSocket) =
     member _.Upstream = upstream
 
     member this.AddClientSocket (socket: UdpSocket) =
+#if EventSourceProviders
+        ConnectionTrackingEventSource.Instance.AddClientSocket ()
+#endif
         lock this (fun () ->
             if clientSocketsSet.Add socket then
                 clientSockets <- Array.append clientSockets [| socket |])
 
     member this.GetRandomClientSocket () =
+#if EventSourceProviders
+        ConnectionTrackingEventSource.Instance.GetRandomClientSocket ()
+#endif
         lock this (fun () -> Array.randomChoice clientSockets)
 
 
 type ConnectionTracking (ttl: TimeSpan, cacheFactory: ICacheFactory) =
+
+#if EventSourceProviders
+    do
+        ConnectionTrackingEventSource.Instance.Created ()
+#endif
 
     let entries = lazy (cacheFactory.Create "ConnectionTracking")
 
     interface IConnectionTracking with
 
         member this.TrackConnection client upstream =
+#if EventSourceProviders
+            ConnectionTrackingEventSource.Instance.TrackConnectionEnter ()
+#endif
             let client, clientSocket = client
 
             let connectionInfo =
@@ -54,8 +68,23 @@ type ConnectionTracking (ttl: TimeSpan, cacheFactory: ICacheFactory) =
                             info)
 
             connectionInfo.AddClientSocket clientSocket
+#if EventSourceProviders
+            ConnectionTrackingEventSource.Instance.TrackConnectionExit ()
+#endif
 
         member _.TryGetClient upstream =
-            match entries.Value.TryGetTouch<ConnectionInfo> upstream with
-            | None -> None
-            | Some info -> Some (info.Client, info.GetRandomClientSocket ())
+#if EventSourceProviders
+            ConnectionTrackingEventSource.Instance.TryGetClientEnter ()
+#endif
+            let result =
+                match entries.Value.TryGetTouch<ConnectionInfo> upstream with
+                | None -> None
+                | Some info -> Some (info.Client, info.GetRandomClientSocket ())
+#if EventSourceProviders
+            match result with
+            | None -> ConnectionTrackingEventSource.Instance.TryGetClientNone ()
+            | Some _ -> ConnectionTrackingEventSource.Instance.TryGetClientSome ()
+            ConnectionTrackingEventSource.Instance.TryGetClientExit ()
+#endif
+            result
+

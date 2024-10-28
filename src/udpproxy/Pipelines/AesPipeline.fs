@@ -16,6 +16,9 @@ type AesPipeline (aesKey: byte array, hmacKey: byte array) =
 
         if Array.length hmacKey = 0 then
             failwithf "HMAC key size must be greater than 0."
+#if EventSourceProviders
+        PipelineEventSource.Instance.AesCreated ()
+#endif
 
     let ivLength = 16
     let headerSize = HMACSHA256.HashSizeInBytes + ivLength
@@ -27,13 +30,22 @@ type AesPipeline (aesKey: byte array, hmacKey: byte array) =
 
         member _.Forward udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ForwardAes ()
+#endif
                 use aes = Aes.Create ()
                 aes.Key <- aesKey
+#if EventSourceProviders
+                PipelineEventSource.Instance.AesAesCreated ()
+#endif
 
                 let encLen = headerSize + aes.GetCiphertextLengthCbc (udpPacket.Length, padMode)
                 let encryptedPayload : byte array = Array.zeroCreate encLen
                 let mutable bytesWritten = 0
 
+#if EventSourceProviders
+                PipelineEventSource.Instance.AesEncrypt ()
+#endif
                 match aes.TryEncryptCbc (ReadOnlySpan<byte> udpPacket.Payload,
                                          ReadOnlySpan<byte> aes.IV,
                                          Span<byte> (encryptedPayload, headerSize, encLen - headerSize),
@@ -43,6 +55,9 @@ type AesPipeline (aesKey: byte array, hmacKey: byte array) =
                 | true -> ()
 
                 Array.Copy(aes.IV, 0, encryptedPayload, HMACSHA256.HashSizeInBytes, ivLength)
+#if EventSourceProviders
+                PipelineEventSource.Instance.AesHmacHash ()
+#endif
                 let written = HMACSHA256.HashData (ReadOnlySpan<byte> hmacKey,
                                                    ReadOnlySpan<byte>(encryptedPayload, HMACSHA256.HashSizeInBytes, encLen - HMACSHA256.HashSizeInBytes),
                                                    Span<byte> (encryptedPayload, 0, HMACSHA256.HashSizeInBytes))
@@ -55,6 +70,9 @@ type AesPipeline (aesKey: byte array, hmacKey: byte array) =
 
         member this.Reverse udpPacket next =
             async {
+#if EventSourceProviders
+                PipelineEventSource.Instance.ReverseAes ()
+#endif
                 if udpPacket.Length < headerSize then
                     raiseMsg "Packet length is too small."
 
@@ -62,6 +80,9 @@ type AesPipeline (aesKey: byte array, hmacKey: byte array) =
                 let iv = ReadOnlyMemory<byte> (udpPacket.Payload, HMACSHA256.HashSizeInBytes, ivLength)
                 let encryptedPayload = ReadOnlyMemory<byte> (udpPacket.Payload, headerSize, udpPacket.Length - headerSize)
 
+#if EventSourceProviders
+                PipelineEventSource.Instance.AesHmacHash ()
+#endif
                 let actualMac =
                     ReadOnlyMemory<byte> (HMACSHA256.HashData (ReadOnlySpan<byte> hmacKey,
                                                                ReadOnlySpan<byte> (udpPacket.Payload, HMACSHA256.HashSizeInBytes, udpPacket.Length - HMACSHA256.HashSizeInBytes)))
@@ -72,7 +93,13 @@ type AesPipeline (aesKey: byte array, hmacKey: byte array) =
                 use aes = Aes.Create ()
                 aes.Key <- aesKey
                 aes.IV <- iv.ToArray ()
+#if EventSourceProviders
+                PipelineEventSource.Instance.AesAesCreated ()
+#endif
 
+#if EventSourceProviders
+                PipelineEventSource.Instance.AesDecrypt ()
+#endif
                 let decryptedPayload =
                     aes.DecryptCbc (encryptedPayload.Span, ReadOnlySpan<byte> aes.IV, padMode)
 

@@ -8,6 +8,7 @@
     <Compile Include="Bits.fs" />
     <Compile Include="Exceptions.fs" />
     <Compile Include="JObject.fs" />
+    <Compile Include="EventSourceProviders.fs" />
     <Compile Include="Reflect.fs" />
     <Compile Include="RWLock.fs" />
     <Compile Include="Span.fs" />

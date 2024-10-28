@@ -25,6 +25,11 @@ type UdpPacket =
 
 and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int, onNewPacket : UdpPacket -> Async<unit>, logger: ILogger) as this =
 
+#if EventSourceProviders
+    do
+        UdpSocketEventSource.Instance.Created ()
+#endif
+
     let logger = logger.ForContext<UdpSocket>()
     let cancelToken = new CancellationTokenSource ()
 
@@ -52,6 +57,9 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
         socket.SendBufferSize <- bufferSize
         socket.ReceiveBufferSize <- bufferSize
 
+#if EventSourceProviders
+        UdpSocketEventSource.Instance.Bind ()
+#endif
         match localEndpoint with
         | Choice1Of2 ip ->
             socket.Bind ip
@@ -64,12 +72,18 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     let receiveUdpPacket (buffer: byte array) (sourceEndpoint: IPEndPoint) =
         async {
             try
+#if EventSourceProviders
+                UdpSocketEventSource.Instance.ReceiveUdpPacketEnter ()
+#endif
                 do! onNewPacket { SourceEndpoint = sourceEndpoint
                                   LocalSocket = this
                                   Payload = buffer }
             with
             | exc ->
                 logger.Error (exc, "UdpSocket<{$LocalEndpoint}>: On new packet error.", socket.Value.LocalEndPoint)
+#if EventSourceProviders
+            UdpSocketEventSource.Instance.ReceiveUdpPacketExit ()
+#endif
         }
         |> Async.StartAsTask
         |> ignore
@@ -87,21 +101,39 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
 
             while not token.IsCancellationRequested do
                 try
+#if EventSourceProviders
+                    UdpSocketEventSource.Instance.SendWaitingEnter ()
+#endif
                     WaitHandle.WaitAny waitHandles |> ignore
+#if EventSourceProviders
+                    UdpSocketEventSource.Instance.SendWaitingExit ()
+#endif
 
                     let mutable isContinue = true
                     while isContinue && (not token.IsCancellationRequested) do
                         isContinue <-
+#if EventSourceProviders
+                            UdpSocketEventSource.Instance.SendDequeue ()
+#endif
                             match sendQueue.TryDequeue () with
                             | false, _ -> false
                             | true, struct (payload, remoteEndpoint) ->
+#if EventSourceProviders
+                                UdpSocketEventSource.Instance.SendSocketSendEnter ()
+#endif
                                 socket.Value.SendTo (ArraySegment<byte> payload, remoteEndpoint) |> ignore
+#if EventSourceProviders
+                                UdpSocketEventSource.Instance.SendSocketSendExit ()
+#endif
                                 true
 
                 with
                 | :? OperationCanceledException -> ()
                 | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
                 | exc ->
+#if EventSourceProviders
+                    UdpSocketEventSource.Instance.SendError ()
+#endif
                     logger.Error(exc, "UdpSocket<{$LocalEndpoint}>: Send error {ErrorMessage}", socket.Value.LocalEndPoint, exc.Message)
                     do! Async.Sleep (TimeSpan.FromSeconds 1.0)
         }
@@ -112,6 +144,9 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     member _.LocalEndpoint = socket.Value.LocalEndPoint :?> IPEndPoint
 
     member _.Start () =
+#if EventSourceProviders
+        UdpSocketEventSource.Instance.Start ()
+#endif
         match receivingTask with
         | Some _ -> ()
         | None ->
@@ -125,10 +160,16 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                 while not token.IsCancellationRequested do
                     try
 
+#if EventSourceProviders
+                        UdpSocketEventSource.Instance.ReceiveEnter ()
+#endif
                         let! message =
                             socket.Value.ReceiveMessageFromAsync(ArraySegment<byte> buffer, SocketFlags.None, anyEndpoint.Value, cancelToken.Token)
                              .AsTask()
                             |> Async.AwaitTask
+#if EventSourceProviders
+                        UdpSocketEventSource.Instance.ReceiveExit ()
+#endif
 
                         if message.ReceivedBytes > 0 && message.RemoteEndPoint :? IPEndPoint then
                             let udpPayload : byte array = Array.zeroCreate message.ReceivedBytes
@@ -139,6 +180,9 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                     | :? OperationCanceledException -> ()
                     | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
                     | exc ->
+#if EventSourceProviders
+                        UdpSocketEventSource.Instance.ReceiveError ()
+#endif
                         logger.Error (exc, "UdpSocket<{$LocalEndpoint}>: Receive error: {ErrorMessage}", socket.Value.LocalEndPoint, exc.Message)
                         do! Async.Sleep (TimeSpan.FromSeconds 3.0)
             }
@@ -148,6 +192,9 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
 
     member _.Send (buffer: byte array) (endpoint: IPEndPoint) =
         async {
+#if EventSourceProviders
+            UdpSocketEventSource.Instance.SendEnqueue ()
+#endif
             sendQueue.Enqueue (struct (buffer, endpoint))
             newPacketEvent.Set () |> ignore
         }
@@ -155,6 +202,9 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     interface IDisposable with
 
         member this.Dispose () =
+#if EventSourceProviders
+            UdpSocketEventSource.Instance.DisposeSocket ()
+#endif
             logger.Information ("UdpSocket<{$LocalEndpoint}>: Disposing...", if socket.IsValueCreated then box socket.Value.LocalEndPoint else box "<lazy not created>")
 
             cancelToken.Cancel ()
