@@ -8,6 +8,8 @@
     <Configurations>Release;Debug</Configurations>
     <WarningLevel>5</WarningLevel>
     <WarnOn>1182,3390</WarnOn>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
