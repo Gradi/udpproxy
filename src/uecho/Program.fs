@@ -168,7 +168,7 @@ let sendReceiveRequests (udpClient: UdpClient)
               LastPing = lastPing
               MinPing = minPing
               MaxPing = maxPing
-              AvgPing = TimeSpan.FromSeconds (avgPing.TotalSeconds / (float avgPingCount))
+              AvgPing = TimeSpan.FromSeconds (avgPing.TotalSeconds / (float (max avgPingCount 1)))
               Result = result }
 
         let sleep () = async {
