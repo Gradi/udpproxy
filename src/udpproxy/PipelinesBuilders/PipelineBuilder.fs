@@ -84,6 +84,15 @@ type PipelineBuilderJsonConverter () =
         (fun (_: IComponentContext) -> AesPipeline (aesKey, hmacKec))
 
 
+    let readSleep (jobj: JObject) : RegFunc =
+        let forwardMin = tryGetProp<int> "forwardMin" jobj |> Option.defaultValue 0
+        let forwardMax = tryGetProp<int> "forwardMax" jobj |> Option.defaultValue 0
+        let reverseMin = tryGetProp<int> "reverseMin" jobj |> Option.defaultValue 0
+        let reverseMax = tryGetProp<int> "reverseMax" jobj |> Option.defaultValue 0
+
+        (fun (_: IComponentContext) -> SleepPipeline (forwardMin, forwardMax, reverseMin, reverseMax))
+
+
     override this.CanConvert objectType = objectType = typeof<IPipelineBuilder>
 
     override this.WriteJson (_, _, _) =
@@ -101,6 +110,7 @@ type PipelineBuilderJsonConverter () =
             | "lz4" -> readLZ4 jObj |> finish metadata
             | "aligner" -> readAligner jObj |> finish metadata
             | "aes" -> readAes jObj |> finish metadata
+            | "sleep" -> readSleep jObj |> finish metadata
             | t -> failwithf "Unknown pipeline type \"%s\"" t
 
         box pipeline

@@ -28,6 +28,7 @@
     <Compile Include="Pipelines\LZ4Pipeline.fs" />
     <Compile Include="Pipelines\AlignerPipeline.fs" />
     <Compile Include="Pipelines\AesPipeline.fs" />
+    <Compile Include="Pipelines\SleepPipeline.fs" />
 
     <Compile Include="PipelinesBuilders\PipelineBuilder.fs" />
 
