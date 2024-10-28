@@ -302,6 +302,8 @@ let runClient (clientArgs: ParseResults<ClientArgs>) (cancelToken: CancellationT
             }
 
         do! sendReceiveRequests udpClient sleep requestFactory handler cancelToken
+        if csvWriter.IsValueCreated then
+            csvWriter.Value.Dispose ()
     }
 
 
