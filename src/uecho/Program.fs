@@ -21,6 +21,7 @@ type SendReceiveResult =
       MinPing: TimeSpan
       MaxPing: TimeSpan
       AvgPing: TimeSpan
+      PacketFirst4Bytes: uint32
       Result: Result<unit, string> }
 
 
@@ -120,6 +121,16 @@ let (|HexPattern|_|) (str: string) =
         let hexBytes = arrayFillUpto hexBytes sizeBytes
         Some (EchoRequest.make hexBytes)
 
+let (|RndPattern|_|) (str: string) =
+    let result = Regex.Match (str, "^rnd ([0-9]{1,})$")
+    match result.Success with
+    | false -> None
+    | true ->
+        let byteCount = Int32.Parse (result.Groups[1].Value)
+        let bytes : byte array = Array.zeroCreate byteCount
+        Random.Shared.NextBytes bytes
+        Some (EchoRequest.make bytes)
+
 
 let pattern2request (pattern: string) =
     match pattern with
@@ -162,13 +173,14 @@ let sendReceiveRequests (udpClient: UdpClient)
         let mutable avgPingCount        = 0
 
 
-        let makeResult result =
+        let makeResult result header =
             { SentPacketsCount = packetCount
               Duration = duration.Elapsed
               LastPing = lastPing
               MinPing = minPing
               MaxPing = maxPing
               AvgPing = TimeSpan.FromSeconds (avgPing.TotalSeconds / (float (max avgPingCount 1)))
+              PacketFirst4Bytes = header
               Result = result }
 
         let sleep () = async {
@@ -184,6 +196,11 @@ let sendReceiveRequests (udpClient: UdpClient)
                 | None -> ()
                 | Some request ->
                     let bytes = EchoRequest.serialize request
+                    let first4bytes =
+                        ((uint32 bytes[0]) <<< 24) |||
+                        ((uint32 bytes[1]) <<< 16) |||
+                        ((uint32 bytes[2]) <<< 8) |||
+                        (uint32 bytes[3])
                     let pingStart = Stopwatch.GetTimestamp ()
                     let! _ = udpClient.SendAsync(bytes, Array.length bytes) |> Async.AwaitTask
                     packetCount        <- packetCount + 1
@@ -202,14 +219,14 @@ let sendReceiveRequests (udpClient: UdpClient)
 
                         match response.Buffer = bytes with
                         | true ->
-                            do! resultHandler (makeResult (Ok ()))
+                            do! resultHandler (makeResult (Ok ()) first4bytes)
                         | false ->
-                            do! resultHandler (makeResult (Error "response not equal to request"))
+                            do! resultHandler (makeResult (Error "response not equal to request") first4bytes)
                     with
                     | :? OperationCanceledException ->
-                        do! resultHandler (makeResult (Error "timeout"))
+                        do! resultHandler (makeResult (Error "timeout") first4bytes)
                     | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) ->
-                        do! resultHandler (makeResult (Error "timeout"))
+                        do! resultHandler (makeResult (Error "timeout") first4bytes)
 
             with
             | :? OperationCanceledException -> ()
@@ -224,13 +241,14 @@ let printResult (format: OutputFormat) (csvWriter: Lazy<CsvWriter>) (result: Sen
         | Error msg -> sprintf "fail: %s" msg
 
     let formatLine (r: SendReceiveResult) =
-        sprintf "#%3d: %O, %.0fms, min %.0fms, max %.0fms, avg %.2fms, %s"
+        sprintf "#%3d: %O, %.0fms, min %.0fms, max %.0fms, avg %.2fms, 0x%x %s"
                 r.SentPacketsCount
                 (r.Duration.ToString("hh\\:mm\\:ss"))
                 r.LastPing.TotalMilliseconds
                 r.MinPing.TotalMilliseconds
                 r.MaxPing.TotalMilliseconds
                 r.AvgPing.TotalMilliseconds
+                r.PacketFirst4Bytes
                 (result2str r.Result)
 
     match format with
@@ -248,6 +266,7 @@ let printResult (format: OutputFormat) (csvWriter: Lazy<CsvWriter>) (result: Sen
         csvWriter.Value.WriteField<float> (Math.Round (result.MinPing.TotalMilliseconds, 2))
         csvWriter.Value.WriteField<float> (Math.Round (result.MaxPing.TotalMilliseconds, 2))
         csvWriter.Value.WriteField<float> (Math.Round (result.AvgPing.TotalMilliseconds, 2))
+        csvWriter.Value.WriteField (sprintf "0x%x" result.PacketFirst4Bytes)
         csvWriter.Value.WriteField (result2str result.Result, shouldQuote = true)
         csvWriter.Value.NextRecord ()
 
@@ -258,16 +277,19 @@ let runClient (clientArgs: ParseResults<ClientArgs>) (cancelToken: CancellationT
         let isInteractive = clientArgs.Contains ClientArgs.InteractiveMode
         let outputFormat = clientArgs.GetResult (ClientArgs.OutputFormat, defaultValue = OutputFormat.Newline)
         let sleep = TimeSpan.FromMilliseconds (float (clientArgs.GetResult (ClientArgs.SleepMs, defaultValue = 0)))
+        let pattern = clientArgs.TryGetResult ClientArgs.Pattern
         let requestFactory =
             if isInteractive then
                 askAndMakeRequest
             else
-                match clientArgs.TryGetResult ClientArgs.Pattern with
-                | Some pattern ->
-                    match pattern2request pattern with
-                    | Some request -> (fun () -> Some request)
-                    | None -> failwithf "Can't parse pattern: %s" pattern
-                | None -> failwith "For non interactive mode you need to supply pattern in command line args. Check '--help'."
+                (fun () ->
+                    match pattern with
+                    | Some pattern ->
+                        match pattern2request pattern with
+                        | Some request -> Some request
+                        | None -> failwithf "Can't parse pattern: %s" pattern
+                    | None -> failwith "For non interactive mode you need to supply pattern in command line args. Check '--help'.")
+
 
         let formatNotCsv = outputFormat <> OutputFormat.Csv
 
@@ -292,6 +314,7 @@ let runClient (clientArgs: ParseResults<ClientArgs>) (cancelToken: CancellationT
                 csvWriter.WriteField "Min ping"
                 csvWriter.WriteField "Max ping"
                 csvWriter.WriteField "Avg ping"
+                csvWriter.WriteField "Packet first 4 bytes"
                 csvWriter.WriteField "Result"
                 csvWriter.NextRecord ()
                 csvWriter
