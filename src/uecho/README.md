@@ -31,6 +31,8 @@ To send text pattern type: `text "Hello World " 123`. This will send `Hello Worl
 
 To send hex pattern type: `hex 0xaa 0xbb 0xcc 0xee 0xff 0x22 125`. This will send bytes `aabbcceeff22` multiplied to have byte length of 125.
 
+To send random pattern type: `rnd 70`. This will send random bytes of length 70.
+
 - Client sends packet;
 - Server receives packet and checks checksum:
     - On bad checksum server does nothing;
