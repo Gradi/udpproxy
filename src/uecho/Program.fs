@@ -15,7 +15,7 @@ open System.Threading
 
 [<NoComparison;NoEquality>]
 type SendReceiveResult =
-    { Index: int
+    { SentPacketsCount: int
       Duration: TimeSpan
       LastPing: TimeSpan
       MinPing: TimeSpan
@@ -153,17 +153,17 @@ let sendReceiveRequests (udpClient: UdpClient)
                         (resultHandler:  SendReceiveResult -> Async<unit>)
                         (cancelToken: CancellationToken) : Async<unit> =
     async {
-        let mutable index         = -1
-        let duration              = Stopwatch.StartNew ()
-        let mutable lastPing      = TimeSpan.Zero
-        let mutable minPing       = TimeSpan.MaxValue
-        let mutable maxPing       = TimeSpan.MinValue
-        let mutable avgPing       = TimeSpan.Zero
-        let mutable avgPingCount  = 0
+        let mutable packetCount         = -1
+        let duration                    = Stopwatch.StartNew ()
+        let mutable lastPing            = TimeSpan.Zero
+        let mutable minPing             = TimeSpan.MaxValue
+        let mutable maxPing             = TimeSpan.MinValue
+        let mutable avgPing             = TimeSpan.Zero
+        let mutable avgPingCount        = 0
 
 
         let makeResult result =
-            { Index = index
+            { SentPacketsCount = packetCount
               Duration = duration.Elapsed
               LastPing = lastPing
               MinPing = minPing
@@ -186,13 +186,14 @@ let sendReceiveRequests (udpClient: UdpClient)
                     let bytes = EchoRequest.serialize request
                     let pingStart = Stopwatch.GetTimestamp ()
                     let! _ = udpClient.SendAsync(bytes, Array.length bytes) |> Async.AwaitTask
+                    packetCount        <- packetCount + 1
 
                     use cancelToken = new CancellationTokenSource (TimeSpan.FromSeconds 5.0)
                     try
                         let! response = udpClient.ReceiveAsync(cancelToken.Token).AsTask() |> Async.AwaitTask
                         let ping = Stopwatch.GetElapsedTime pingStart
 
-                        index        <- index + 1
+
                         lastPing     <- ping
                         minPing      <- min ping minPing
                         maxPing      <- max ping maxPing
@@ -224,7 +225,7 @@ let printResult (format: OutputFormat) (csvWriter: Lazy<CsvWriter>) (result: Sen
 
     let formatLine (r: SendReceiveResult) =
         sprintf "#%3d: %O, %.0fms, min %.0fms, max %.0fms, avg %.2fms, %s"
-                r.Index
+                r.SentPacketsCount
                 (r.Duration.ToString("hh\\:mm\\:ss"))
                 r.LastPing.TotalMilliseconds
                 r.MinPing.TotalMilliseconds
@@ -241,7 +242,7 @@ let printResult (format: OutputFormat) (csvWriter: Lazy<CsvWriter>) (result: Sen
             printfn "%s" (formatLine result)
 
     | Csv ->
-        csvWriter.Value.WriteField<int> result.Index
+        csvWriter.Value.WriteField<int> result.SentPacketsCount
         csvWriter.Value.WriteField (result.Duration.ToString ("hh\\:mm\\:ss"))
         csvWriter.Value.WriteField<float> (Math.Round (result.LastPing.TotalMilliseconds, 2))
         csvWriter.Value.WriteField<float> (Math.Round (result.MinPing.TotalMilliseconds, 2))
@@ -285,7 +286,7 @@ let runClient (clientArgs: ParseResults<ClientArgs>) (cancelToken: CancellationT
         let csvWriter =
             lazy (
                 let csvWriter = new CsvWriter (Console.Out, CultureInfo.InvariantCulture, leaveOpen = true)
-                csvWriter.WriteField "Index"
+                csvWriter.WriteField "Sent packet count"
                 csvWriter.WriteField "Duration"
                 csvWriter.WriteField "Ping"
                 csvWriter.WriteField "Min ping"
