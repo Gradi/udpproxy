@@ -122,7 +122,7 @@ let (|HexPattern|_|) (str: string) =
         Some (EchoRequest.make hexBytes)
 
 let (|RndPattern|_|) (str: string) =
-    let result = Regex.Match (str, "^rnd ([0-9]{1,})$")
+    let result = Regex.Match (str, "^rnd ([0-9]+)$")
     match result.Success with
     | false -> None
     | true ->
@@ -136,6 +136,7 @@ let pattern2request (pattern: string) =
     match pattern with
     | TextPattern request -> Some request
     | HexPattern request -> Some request
+    | RndPattern request -> Some request
     | _ -> None
 
 
@@ -149,6 +150,7 @@ let askAndMakeRequest () =
             match input with
             | TextPattern request -> Some request
             | HexPattern request -> Some request
+            | RndPattern request -> Some request
             | _ ->
                 log "Bad input (%s)." input
                 None
