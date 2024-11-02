@@ -2,7 +2,6 @@ namespace UdpProxy
 
 open Serilog
 open System
-open System.Collections.Concurrent
 open System.IO.Hashing
 open System.Net
 open System.Net.Sockets
@@ -75,98 +74,59 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
         |> ignore
 
 
-    let mutable receivingTask = None
-
-
-    let sendQueue = ConcurrentQueue<struct (byte array * IPEndPoint)> ()
-    let newPacketEvent = new AutoResetEvent (false)
-    let sendingTask =
+    let receivingTask = lazy (
         async {
-            let waitHandles = [| cancelToken.Token.WaitHandle; newPacketEvent |]
+            let buffer : byte array = Array.zeroCreate bufferSize
             let token = cancelToken.Token
 
             while not token.IsCancellationRequested do
                 try
-                    WaitHandle.WaitAny waitHandles |> ignore
 
-                    let mutable isContinue = true
-                    while isContinue && (not token.IsCancellationRequested) do
-                        isContinue <-
-                            match sendQueue.TryDequeue () with
-                            | false, _ -> false
-                            | true, struct (payload, remoteEndpoint) ->
-                                socket.Value.SendTo (ArraySegment<byte> payload, remoteEndpoint) |> ignore
-                                true
+                    let! message =
+                        socket.Value.ReceiveMessageFromAsync(ArraySegment<byte> buffer, SocketFlags.None, anyEndpoint.Value, cancelToken.Token)
+                         .AsTask()
+                        |> Async.AwaitTask
+
+                    if message.ReceivedBytes > 0 && message.RemoteEndPoint :? IPEndPoint then
+                        let udpPayload : byte array = Array.zeroCreate message.ReceivedBytes
+                        Array.Copy (buffer, 0, udpPayload, 0, message.ReceivedBytes)
+                        receiveUdpPacket udpPayload (message.RemoteEndPoint :?> IPEndPoint)
 
                 with
                 | :? OperationCanceledException -> ()
                 | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
                 | exc ->
-                    logger.Error(exc, "UdpSocket<{$LocalEndpoint}>: Send error {ErrorMessage}", socket.Value.LocalEndPoint, exc.Message)
-                    do! Async.Sleep (TimeSpan.FromSeconds 1.0)
+                    logger.Error (exc, "UdpSocket<{$LocalEndpoint}>: Receive error: {ErrorMessage}", socket.Value.LocalEndPoint, exc.Message)
+                    do! Async.Sleep (TimeSpan.FromSeconds 3.0)
         }
         |> Async.StartAsTask
-        :> Task
+        :> Task)
 
 
     member _.LocalEndpoint = socket.Value.LocalEndPoint :?> IPEndPoint
 
     member _.Start () =
-        match receivingTask with
-        | Some _ -> ()
-        | None ->
-
-        socket.Value |> ignore
-        receivingTask <-
-            async {
-                let buffer : byte array = Array.zeroCreate bufferSize
-                let token = cancelToken.Token
-
-                while not token.IsCancellationRequested do
-                    try
-
-                        let! message =
-                            socket.Value.ReceiveMessageFromAsync(ArraySegment<byte> buffer, SocketFlags.None, anyEndpoint.Value, cancelToken.Token)
-                             .AsTask()
-                            |> Async.AwaitTask
-
-                        if message.ReceivedBytes > 0 && message.RemoteEndPoint :? IPEndPoint then
-                            let udpPayload : byte array = Array.zeroCreate message.ReceivedBytes
-                            Array.Copy (buffer, 0, udpPayload, 0, message.ReceivedBytes)
-                            receiveUdpPacket udpPayload (message.RemoteEndPoint :?> IPEndPoint)
-
-                    with
-                    | :? OperationCanceledException -> ()
-                    | :? AggregateException as exc when (exc.InnerException :? OperationCanceledException) -> ()
-                    | exc ->
-                        logger.Error (exc, "UdpSocket<{$LocalEndpoint}>: Receive error: {ErrorMessage}", socket.Value.LocalEndPoint, exc.Message)
-                        do! Async.Sleep (TimeSpan.FromSeconds 3.0)
-            }
-            |> Async.StartAsTask
-            :> Task
-            |> Some
+        lock this (fun () ->
+            if not receivingTask.IsValueCreated then
+                receivingTask.Value |> ignore)
 
     member _.Send (buffer: byte array) (endpoint: IPEndPoint) =
         async {
-            sendQueue.Enqueue (struct (buffer, endpoint))
-            newPacketEvent.Set () |> ignore
+            lock this (fun () -> socket.Value.SendTo (ReadOnlySpan<byte> buffer, endpoint) |> ignore)
         }
 
     interface IDisposable with
 
         member this.Dispose () =
-            logger.Information ("UdpSocket<{$LocalEndpoint}>: Disposing...", if socket.IsValueCreated then box socket.Value.LocalEndPoint else box "<lazy not created>")
+            lock this (fun () ->
+                logger.Information ("UdpSocket<{$LocalEndpoint}>: Disposing...", if socket.IsValueCreated then box socket.Value.LocalEndPoint else box "<lazy not created>")
 
-            cancelToken.Cancel ()
-            newPacketEvent.Set () |> ignore
+                cancelToken.Cancel ()
 
-            match receivingTask with
-            | Some task -> task.Wait ()
-            | None -> ()
-            sendingTask.Wait ()
+                if receivingTask.IsValueCreated then
+                    receivingTask.Value.Wait ()
 
-            if socket.IsValueCreated then
-                socket.Value.Dispose ()
+                if socket.IsValueCreated then
+                    socket.Value.Dispose ()
 
-            cancelToken.Dispose ()
-            newPacketEvent.Dispose ()
+                cancelToken.Dispose ())
