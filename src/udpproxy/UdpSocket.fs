@@ -26,6 +26,7 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
 
     let logger = logger.ForContext<UdpSocket>()
     let cancelToken = new CancellationTokenSource ()
+    let asyncLock = new AsyncLock ()
 
     let anyEndpoint = lazy (
         let addressFamily =
@@ -111,9 +112,11 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                 receivingTask.Value |> ignore)
 
     member _.Send (buffer: byte array) (endpoint: IPEndPoint) =
-        async {
-            lock this (fun () -> socket.Value.SendTo (ReadOnlySpan<byte> buffer, endpoint) |> ignore)
-        }
+        asyncLock.Lock (fun () ->
+            async {
+                let! _ = socket.Value.SendToAsync (ArraySegment<byte> buffer, endpoint) |> Async.AwaitTask
+                return ()
+            })
 
     interface IDisposable with
 
@@ -129,4 +132,5 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                 if socket.IsValueCreated then
                     socket.Value.Dispose ()
 
-                cancelToken.Dispose ())
+                cancelToken.Dispose ()
+                (asyncLock :> IDisposable).Dispose ())

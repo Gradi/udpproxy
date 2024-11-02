@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AsyncLock.fs" />
     <Compile Include="Bits.fs" />
     <Compile Include="Exceptions.fs" />
     <Compile Include="JObject.fs" />
