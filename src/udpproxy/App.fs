@@ -1,5 +1,6 @@
 namespace UdpProxy
 
+open System.Reflection
 open Serilog
 open Serilog.Events
 open System.Threading
@@ -68,12 +69,19 @@ type App (pipelineStages: Lazy<IPipeline seq>, logger: ILogger, socketCollection
             |> Array.fold reverseFolder (fun _ -> async { return () })
         )
 
+    let appVersion =
+        lazy (
+            match typedefof<App>.Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute> () with
+            | null -> "<version attribute is null>"
+            | attr -> attr.InformationalVersion)
+
 
     interface IApp with
 
         member _.Run cancelToken =
             async {
                 logger.Information "App: Starting up..."
+                logger.Information ("App: Version is {Version}", appVersion.Value)
 
                 pipelineStages.Value |> ignore
                 forwardEntrypoint.Value |> ignore
