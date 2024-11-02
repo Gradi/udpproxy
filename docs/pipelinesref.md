@@ -116,6 +116,22 @@ You can run `udpproxy genkey` to generate key. Or use your favorite tool to gene
 Encryption and HMAC keys must be the same between two hosts in order for hosts to be able to encrypt/decrypts each others packets.
 
 
+## sleep
+
+`"$type": "sleep"`
+
+**Forward**: Sleeps for specified amount of milliseconds.
+
+**Reverse**: Sleeps for specified amount of milliseconds.
+
+| Key | Format | Description |
+|-----|--------|-------------|
+| `forwardMin` | int | Minimum time (milliseconds) to sleep in forward stage |
+| `forwardMax` | int | Maximum time (milliseconds) to sleep in forward stage |
+| `reverseMin` | int | Minimum time (milliseconds) to sleep in reverse stage |
+| `reverseMax` | int | Maximum time (milliseconds) to sleep in reverse stage |
+
+
 ## Sample configuration
 
 Client:
