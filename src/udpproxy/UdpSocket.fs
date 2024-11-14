@@ -43,6 +43,17 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
     let socket = lazy (
         let socket = new Socket (anyEndpoint.Value.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
 
+        if OperatingSystem.IsWindows () then
+            (*
+            ** Remote machine can send 'ICMP port unreachable' message
+            ** leading to socket on this side to be closed for receiving(reading).
+            ** Problem is that input socket must receive packets from anyone and anyone
+            ** can close socket for everyone else. That is weird. This option should prevent
+            ** socket from getting closed by 'ICMP port unreachable' messages.
+            *)
+            let SIO_UDP_CONNRESET = -1744830452
+            socket.IOControl (SIO_UDP_CONNRESET, [| 0uy |], Unchecked.defaultof<byte array>) |> ignore
+
         match anyEndpoint.Value.AddressFamily with
         | AddressFamily.InterNetwork ->
             socket.SetSocketOption (SocketOptionLevel.IP, SocketOptionName.PacketInformation, true)
