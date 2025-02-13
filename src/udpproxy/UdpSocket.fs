@@ -123,11 +123,10 @@ and UdpSocket (localEndpoint: Choice<IPEndPoint, AddressFamily>, bufferSize: int
                 receivingTask.Value |> ignore)
 
     member _.Send (buffer: byte array) (endpoint: IPEndPoint) =
-        asyncLock.Lock (fun () ->
-            async {
-                let! _ = socket.Value.SendToAsync (ArraySegment<byte> buffer, endpoint) |> Async.AwaitTask
-                return ()
-            })
+        async {
+            let! _ = socket.Value.SendToAsync (ArraySegment<byte> buffer, endpoint) |> Async.AwaitTask
+            return ()
+        }
 
     interface IDisposable with
 
